@@ -12,8 +12,6 @@
 namespace
 {
 gchar const* const CHANNEL = "io.mir-server/window";
-
-int new_id{}; // TODO: the new id can be obtained directly from _MyApplication::windows
 }
 
 struct _MyApplication
@@ -150,6 +148,23 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
 {
     MyApplication* self = MY_APPLICATION(user_data);
 
+    auto const get_new_window_id{[](const std::map<int, MirWindow*>& windows)
+        {
+            auto new_id{0};
+            for (auto const& [id, _] : windows)
+            {
+                if (id == new_id)
+                {
+                    ++new_id;
+                }
+                else
+                {
+                    break;
+                }
+            }
+            return new_id;
+        }};
+
     gchar const* name = fl_method_call_get_name(method_call);
     if (strcmp(name, "createRegularWindow") == 0)
     {
@@ -165,7 +180,8 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
             .width = static_cast<int>(fl_value_get_float(fl_value_get_list_value(args, 0))),
             .height = static_cast<int>(fl_value_get_float(fl_value_get_list_value(args, 1)))};
 
-        MirWindow* window = mir_window_new(MirWindowArchetype::regular, size, {}, nullptr, new_id++);
+        auto const new_id{get_new_window_id(self->windows)};
+        MirWindow* window = mir_window_new(MirWindowArchetype::regular, size, {}, nullptr, new_id);
         self->windows[window->id] = window;
         gtk_window_set_application(GTK_WINDOW(window), GTK_APPLICATION(self));
         gtk_widget_show(GTK_WIDGET(window));
@@ -187,7 +203,8 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
             .width = static_cast<int>(fl_value_get_float(fl_value_get_list_value(args, 0))),
             .height = static_cast<int>(fl_value_get_float(fl_value_get_list_value(args, 1)))};
 
-        MirWindow* window = mir_window_new(MirWindowArchetype::floating_regular, size, {}, nullptr, new_id++);
+        auto const new_id{get_new_window_id(self->windows)};
+        MirWindow* window = mir_window_new(MirWindowArchetype::floating_regular, size, {}, nullptr, new_id);
         self->windows[window->id] = window;
         gtk_window_set_application(GTK_WINDOW(window), GTK_APPLICATION(self));
         gtk_widget_show(GTK_WIDGET(window));
@@ -241,7 +258,8 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
 
         MirWindow* parent_mir_window = self->windows[parent_id];
 
-        MirWindow* window = mir_window_new(MirWindowArchetype::satellite, size, positioner, parent_mir_window, new_id++);
+        auto const new_id{get_new_window_id(self->windows)};
+        MirWindow* window = mir_window_new(MirWindowArchetype::satellite, size, positioner, parent_mir_window, new_id);
         self->windows[window->id] = window;
         gtk_window_set_application(GTK_WINDOW(window), GTK_APPLICATION(self));
         gtk_widget_show(GTK_WIDGET(window));
@@ -277,7 +295,8 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
             parent_mir_window = self->windows[parent_id];
         }
 
-        MirWindow* window = mir_window_new(MirWindowArchetype::dialog, size, {}, parent_mir_window, new_id++);
+        auto const new_id{get_new_window_id(self->windows)};
+        MirWindow* window = mir_window_new(MirWindowArchetype::dialog, size, {}, parent_mir_window, new_id);
         self->windows[window->id] = window;
         gtk_window_set_application(GTK_WINDOW(window), GTK_APPLICATION(self));
         gtk_widget_show(GTK_WIDGET(window));

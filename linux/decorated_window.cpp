@@ -26,6 +26,10 @@ void mfa::DecoratedWindow::handle_mouse_button(
 {
     ToplevelWindow::handle_mouse_button(pointer, serial, time, button, state);
 
+    // TODO: check if there's a dialog child
+    //     (1) A user should be able to move, resize, or hide an open dialog’s parent, but not
+    //     close it or interact with its contents; and move, resize, or close the parent’s
+    //     satellites if any, but not interact with their contents.
     auto const pointer_on_close_button{[this]
         {
             auto const margin{10};
