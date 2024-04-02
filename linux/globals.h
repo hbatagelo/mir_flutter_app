@@ -63,6 +63,7 @@ public:
     void close_window(wl_surface* surface);
 
     auto window_for(wl_surface* surface) -> MirWindow*;
+    auto pointer_position() -> std::tuple<double, double> { return pointer_position_; }
 
 private:
     void register_window(MirWindow* window);
@@ -109,6 +110,8 @@ private:
     MirWindow* keyboard_focus{};
 
     std::map<wl_surface*, MirWindow*> windows;
+
+    std::tuple<double, double> pointer_position_;
 
     Globals() = default;
 };

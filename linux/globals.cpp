@@ -253,11 +253,12 @@ void mfa::Globals::handle_mouse_leave(wl_pointer* /*pointer*/, uint32_t /*serial
 
 void mfa::Globals::handle_mouse_motion(
     wl_pointer* /*pointer*/,
-    uint32_t time,
+    uint32_t/*time*/,
     wl_fixed_t surface_x,
     wl_fixed_t surface_y)
 {
     // g_print("mouse_motion: (%.2f, %.2f) @ %i\n", wl_fixed_to_double(surface_x), wl_fixed_to_double(surface_y), time);
+    pointer_position_ = {wl_fixed_to_double(surface_x), wl_fixed_to_double(surface_y)};
 }
 
 void mfa::Globals::handle_mouse_button(

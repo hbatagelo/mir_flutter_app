@@ -17,7 +17,8 @@ mfa::SatelliteWindow::SatelliteWindow(
         {
             .title_bar_text = "satellite",
             .title_bar_corner_radius = 8,
-            .title_bar_height = 24
+            .title_bar_height = 24,
+            .title_bar_font_size = 13
         }},
     mir_satellite_surface{
         Globals::instance().mir_shell() ?

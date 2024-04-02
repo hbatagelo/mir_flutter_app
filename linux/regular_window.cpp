@@ -75,9 +75,9 @@ void mfa::RegularWindow::draw_new_content(Buffer* buffer)
 {
     DecoratedWindow::draw_new_content(buffer);
 
-    std::string text{"Hello, Mir-Shell!"};
-    cairo_set_source_rgb(buffer->cairo_context, 0, 0, 0);
-    cairo_select_font_face(buffer->cairo_context, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+    std::string text{"Hello, Mir Shell!"};
+    cairo_set_source_rgb(buffer->cairo_context, 0.2, 0.2, 0.2);
+    cairo_select_font_face(buffer->cairo_context, "Ubuntu", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
     cairo_set_font_size(buffer->cairo_context, 24);
 
     cairo_text_extents_t text_extents;

@@ -3,6 +3,7 @@
 #include "mir_window.h"
 
 #include <cairo.h>
+#include <linux/input-event-codes.h>
 
 #include <cassert>
 #include <numbers>
@@ -14,6 +15,44 @@ mfa::DecoratedWindow::DecoratedWindow(wl_surface* surface, int32_t width, int32_
     ToplevelWindow(surface, width, height),
     config_{std::move(config)}
 {
+}
+
+void mfa::DecoratedWindow::handle_mouse_button(
+    wl_pointer* pointer,
+    uint32_t serial,
+    uint32_t time,
+    uint32_t button,
+    uint32_t state)
+{
+    ToplevelWindow::handle_mouse_button(pointer, serial, time, button, state);
+
+    auto const pointer_on_close_button{[this]
+        {
+            auto const margin{10};
+            auto const [x, y]{Globals::instance().pointer_position()};
+            return (x >= close_button_rect.left   - margin &&
+                    x <= close_button_rect.right  + margin &&
+                    y >= close_button_rect.top    - margin &&
+                    y <= close_button_rect.bottom + margin);
+        }};
+
+    if (button == BTN_LEFT)
+    {
+        if (state == WL_POINTER_BUTTON_STATE_PRESSED && pointer_on_close_button())
+        {
+            pressed_close_button = true;
+        }
+
+        if (state == WL_POINTER_BUTTON_STATE_RELEASED)
+        {
+            if (pressed_close_button && pointer_on_close_button())
+            {
+                Globals::instance().close_window(static_cast<wl_surface*>(*this));
+            }
+
+            pressed_close_button = false;
+        }
+    }
 }
 
 void mfa::DecoratedWindow::draw_new_content(Buffer* buffer)
@@ -35,67 +74,106 @@ void mfa::DecoratedWindow::draw_new_content(Buffer* buffer)
     // Title bar
     {
         // Background
-        auto const i{std::max(config_.title_bar_intensity - current_intensity_offset, 0.0)};
-        cairo_set_source_rgba(buffer->cairo_context, i, i, i, alpha);
+        auto const tbi{std::max(config_.title_bar_intensity - current_intensity_offset, 0.0)};
+        cairo_set_source_rgba(buffer->cairo_context, tbi, tbi, tbi, alpha);
         cairo_set_line_width(buffer->cairo_context, config_.stroke_width);
 
         cairo_new_sub_path(buffer->cairo_context);
         cairo_arc(buffer->cairo_context, x, y + config_.title_bar_height, 0, 0, 0);
-        cairo_arc(buffer->cairo_context, x + config_.title_bar_corner_radius, y + config_.title_bar_corner_radius, config_.title_bar_corner_radius, pi, -pi_2);
-        cairo_arc(buffer->cairo_context, x + width - config_.title_bar_corner_radius, y + config_.title_bar_corner_radius, config_.title_bar_corner_radius, -pi_2, 0);
+        cairo_arc(
+            buffer->cairo_context,
+            x + config_.title_bar_corner_radius,
+            y + config_.title_bar_corner_radius,
+            config_.title_bar_corner_radius,
+            pi,
+            -pi_2);
+        cairo_arc(
+            buffer->cairo_context,
+            x + width - config_.title_bar_corner_radius,
+            y + config_.title_bar_corner_radius,
+            config_.title_bar_corner_radius,
+            -pi_2,
+            0);
         cairo_arc(buffer->cairo_context, x + width, y + config_.title_bar_height, 0, 0, 0);
         cairo_fill_preserve(buffer->cairo_context);
 
-        cairo_set_source_rgba(buffer->cairo_context, config_.stroke_intensity, config_.stroke_intensity, config_.stroke_intensity, 1);
+        auto const si{config_.stroke_intensity};
+        cairo_set_source_rgba(buffer->cairo_context, si, si, si, 1);
         cairo_stroke(buffer->cairo_context);
 
         // Text
         cairo_set_source_rgb(buffer->cairo_context, 1, 1, 1);
-        cairo_select_font_face(buffer->cairo_context, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
+        cairo_select_font_face(buffer->cairo_context, "Ubuntu", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
         cairo_set_font_size(buffer->cairo_context, config_.title_bar_font_size);
+        auto title_text{config_.title_bar_text + " - ID " + std::to_string(mir_window->id)};
         cairo_text_extents_t text_extents;
-        cairo_text_extents(buffer->cairo_context, config_.title_bar_text.c_str(), &text_extents);
+        cairo_text_extents(buffer->cairo_context, title_text.c_str(), &text_extents);
         cairo_move_to(
             buffer->cairo_context,
             (buffer->width - text_extents.width) / 2.0 - text_extents.x_bearing,
             y + (config_.title_bar_height - text_extents.height) / 2.0 - text_extents.y_bearing);
-        cairo_show_text(buffer->cairo_context, config_.title_bar_text.c_str());
+        cairo_show_text(buffer->cairo_context, title_text.c_str());
+
+        // Close button
+        auto const close_button_size{config_.title_bar_height * close_button_scale};
+        auto const close_button_padding{(config_.title_bar_height - close_button_size) / 2.0};
+        auto const left{x + width - close_button_padding - close_button_size};
+        auto const top{y + close_button_padding};
+        auto const right{left + close_button_size};
+        auto const bottom{top + close_button_size};
+        close_button_rect = {left, top, right, bottom};
+
+        cairo_set_source_rgb(buffer->cairo_context, 1, 1, 1);
+        cairo_set_line_width(buffer->cairo_context, 2);
+        cairo_move_to(buffer->cairo_context, left, top);
+        cairo_line_to(buffer->cairo_context, right, bottom);
+        cairo_move_to(buffer->cairo_context, right, top);
+        cairo_line_to(buffer->cairo_context, left, bottom);
+        cairo_stroke(buffer->cairo_context);
     }
 
     // Client rectangle
     {
-        auto const i{config_.background_intensity};
-        cairo_set_source_rgba(buffer->cairo_context, i, i, i, alpha);
-        cairo_rectangle(buffer->cairo_context, x, y + config_.title_bar_height, width, height - config_.title_bar_height);
+        auto const bi{config_.background_intensity};
+        cairo_set_source_rgba(buffer->cairo_context, bi, bi, bi, alpha);
+        cairo_set_line_width(buffer->cairo_context, config_.stroke_width);
+        cairo_rectangle(
+            buffer->cairo_context,
+            x,
+            y + config_.title_bar_height,
+            width,
+            height - config_.title_bar_height);
         cairo_fill_preserve(buffer->cairo_context);
 
-        cairo_set_source_rgba(buffer->cairo_context, config_.stroke_intensity, config_.stroke_intensity, config_.stroke_intensity, 1);
+        auto const si{config_.stroke_intensity};
+        cairo_set_source_rgba(buffer->cairo_context, si, si, si, 1);
         cairo_stroke(buffer->cairo_context);
     }
 
     // Text
+    if (mir_window->parent)
     {
-        cairo_set_source_rgb(buffer->cairo_context, 0, 0, 0);
-        cairo_select_font_face(buffer->cairo_context, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
-        cairo_set_font_size(buffer->cairo_context, 14);
+        auto const font_size{14};
+        cairo_set_source_rgb(buffer->cairo_context, 0.2, 0.2, 0.2);
+        cairo_select_font_face(buffer->cairo_context, "Ubuntu", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+        cairo_set_font_size(buffer->cairo_context, font_size);
 
+        auto const padding{10};
         auto print_line{
-            [&, line = 0](std::string const& text, double line_spacing = 1.25) mutable
+            [&, y_pos{0.0}](std::string const& text, double line_spacing = 1.5) mutable
             {
                 cairo_text_extents_t text_extents;
                 cairo_text_extents(buffer->cairo_context, text.c_str(), &text_extents);
-
-                cairo_move_to(
-                    buffer->cairo_context,
-                    config().stroke_width + 10 - text_extents.x_bearing,
-                    config().title_bar_height + 10 - text_extents.y_bearing + (line * text_extents.height * line_spacing));
-
+                if (y_pos == 0)
+                {
+                    y_pos = config().title_bar_height + padding - text_extents.y_bearing;
+                }
+                cairo_move_to(buffer->cairo_context, config().stroke_width + padding - text_extents.x_bearing, y_pos);
                 cairo_show_text(buffer->cairo_context, text.c_str());
-                ++line;
+                y_pos += font_size * line_spacing;
             }};
 
-        print_line("id: " + std::to_string(mir_window->id));
-        print_line("parent_id: " + (mir_window->parent ? std::to_string(mir_window->parent->id) : "(nil)"));
+        print_line("Parent ID: " + std::to_string(mir_window->parent->id));
     }
 }
 
