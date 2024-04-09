@@ -45,7 +45,7 @@ struct MirWindowPositioner
 {
     MirWindowRect anchor_rect;
     mir_positioner_v1_anchor anchor;
-    mir_positioner_v1_anchor gravity;
+    mir_positioner_v1_gravity gravity;
     MirWindowOffset offset;
     uint32_t constraint_adjustment;
 };

@@ -5,7 +5,6 @@
 #include <cairo.h>
 #include <linux/input-event-codes.h>
 
-#include <cassert>
 #include <numbers>
 #include <string>
 
@@ -62,12 +61,12 @@ void mfa::DecoratedWindow::handle_mouse_button(
 void mfa::DecoratedWindow::draw_new_content(Buffer* buffer)
 {
     auto* mir_window{Globals::instance().window_for(static_cast<wl_surface*>(*this))};
-    assert(mir_window);
+    if (!mir_window) return;
 
     auto const x{config_.stroke_width / 2};
     auto const y{config_.stroke_width / 2};
     auto const width{buffer->width - (x * 2)};
-    [[maybe_unused]] auto const height{buffer->height - (y * 2)};
+    auto const height{buffer->height - (y * 2)};
 
     auto const pi{std::numbers::pi};
     auto const pi_2{pi / 2.0};

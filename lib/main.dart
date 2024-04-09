@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'flutter_view_positioner.dart';
+import 'custom_positioner_dialog.dart';
+import 'window_settings_dialog.dart';
 
 void main() {
   runApp(const MyApp());
@@ -27,7 +31,98 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final windowChannel = const MethodChannel('io.mir-server/window');
-  List<int> windows = [];
+
+  Map<String, dynamic> windowSettings = {
+    'regularSize': const Size(400, 400),
+    'floatingRegularSize': const Size(300, 300),
+    'dialogSize': const Size(200, 200),
+    'satelliteSize': const Size(150, 300),
+    'anchorRect': const Rect.fromLTWH(0, 0, 400, 400),
+  };
+
+  int positionerIndex = 0;
+  List<Map<String, dynamic>> positionerSettings = [
+    // Left
+    <String, dynamic>{
+      'name': 'Left',
+      'parentAnchor': FlutterViewPositionerAnchor.left,
+      'childAnchor': FlutterViewPositionerAnchor.right,
+      'offset': const Offset(0, 0),
+      'constraintAdjustments': <FlutterViewPositionerConstraintAdjustment>{
+        FlutterViewPositionerConstraintAdjustment.slideX,
+        FlutterViewPositionerConstraintAdjustment.slideY,
+      }
+    },
+    // Right
+    <String, dynamic>{
+      'name': 'Right',
+      'parentAnchor': FlutterViewPositionerAnchor.right,
+      'childAnchor': FlutterViewPositionerAnchor.left,
+      'offset': const Offset(0, 0),
+      'constraintAdjustments': <FlutterViewPositionerConstraintAdjustment>{
+        FlutterViewPositionerConstraintAdjustment.slideX,
+        FlutterViewPositionerConstraintAdjustment.slideY,
+      }
+    },
+    // Bottom Left
+    <String, dynamic>{
+      'name': 'Bottom Left',
+      'parentAnchor': FlutterViewPositionerAnchor.bottomLeft,
+      'childAnchor': FlutterViewPositionerAnchor.topRight,
+      'offset': const Offset(0, 0),
+      'constraintAdjustments': <FlutterViewPositionerConstraintAdjustment>{
+        FlutterViewPositionerConstraintAdjustment.slideX,
+        FlutterViewPositionerConstraintAdjustment.slideY,
+      }
+    },
+    // Bottom
+    <String, dynamic>{
+      'name': 'Bottom',
+      'parentAnchor': FlutterViewPositionerAnchor.bottom,
+      'childAnchor': FlutterViewPositionerAnchor.top,
+      'offset': const Offset(0, 0),
+      'constraintAdjustments': <FlutterViewPositionerConstraintAdjustment>{
+        FlutterViewPositionerConstraintAdjustment.slideX,
+        FlutterViewPositionerConstraintAdjustment.slideY,
+      }
+    },
+    // Bottom Right
+    <String, dynamic>{
+      'name': 'Bottom Right',
+      'parentAnchor': FlutterViewPositionerAnchor.bottomRight,
+      'childAnchor': FlutterViewPositionerAnchor.topLeft,
+      'offset': const Offset(0, 0),
+      'constraintAdjustments': <FlutterViewPositionerConstraintAdjustment>{
+        FlutterViewPositionerConstraintAdjustment.slideX,
+        FlutterViewPositionerConstraintAdjustment.slideY,
+      }
+    },
+    // Center
+    <String, dynamic>{
+      'name': 'Center',
+      'parentAnchor': FlutterViewPositionerAnchor.center,
+      'childAnchor': FlutterViewPositionerAnchor.center,
+      'offset': const Offset(0, 0),
+      'constraintAdjustments': <FlutterViewPositionerConstraintAdjustment>{
+        FlutterViewPositionerConstraintAdjustment.slideX,
+        FlutterViewPositionerConstraintAdjustment.slideY,
+      }
+    },
+    // Custom
+    <String, dynamic>{
+      'name': 'Custom',
+      'parentAnchor': FlutterViewPositionerAnchor.left,
+      'childAnchor': FlutterViewPositionerAnchor.right,
+      'offset': const Offset(0, 50),
+      'constraintAdjustments': <FlutterViewPositionerConstraintAdjustment>{
+        FlutterViewPositionerConstraintAdjustment.slideX,
+        FlutterViewPositionerConstraintAdjustment.slideY,
+      }
+    }
+  ];
+
+  List<Map<String, dynamic>> windows = [];
+  int selectedRowIndex = -1;
 
   @override
   void initState() {
@@ -41,127 +136,425 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: const Text('Mir Window Test'),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            GestureDetector(
-              onTap: () async {
-                final id = await createRegularWindow(const Size(400, 400));
-                setWindowId(id);
-              },
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  border: Border.all(width: 2),
-                  borderRadius: BorderRadius.circular(4),
+      body: Column(
+        children: [
+          Expanded(
+            flex: 8,
+            child: Container(),
+          ),
+          Expanded(
+            flex: 82,
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 50.0),
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 5,
+                      child: Container(),
+                    ),
+                    Expanded(
+                      flex: 30,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          SizedBox(
+                            width: 500,
+                            height: 500,
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.vertical,
+                              child: DataTable(
+                                showBottomBorder: true,
+                                onSelectAll: (selected) {
+                                  setState(() {
+                                    selectedRowIndex = -1;
+                                  });
+                                },
+                                columns: const [
+                                  DataColumn(
+                                    label: SizedBox(
+                                      width: 20,
+                                      child: Text(
+                                        'ID',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  DataColumn(
+                                    label: SizedBox(
+                                      width: 120,
+                                      child: Text(
+                                        'Type',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  DataColumn(
+                                      label: SizedBox(
+                                        width: 20,
+                                        child: Text(''),
+                                      ),
+                                      numeric: true),
+                                ],
+                                rows: windows
+                                    .asMap()
+                                    .entries
+                                    .map<DataRow>((entry) {
+                                  final int index = entry.key;
+                                  final Map<String, dynamic> window =
+                                      entry.value;
+                                  final int windowId = window['id'];
+                                  final String type = window['type'];
+                                  final bool isSelected =
+                                      selectedRowIndex == index;
+
+                                  return DataRow(
+                                    color: MaterialStateColor.resolveWith(
+                                        (states) {
+                                      if (states
+                                          .contains(MaterialState.selected)) {
+                                        return Theme.of(context)
+                                            .colorScheme
+                                            .primary
+                                            .withOpacity(0.08);
+                                      }
+                                      return Colors.transparent;
+                                    }),
+                                    selected: isSelected,
+                                    onSelectChanged: (selected) {
+                                      setState(() {
+                                        if (selected != null) {
+                                          selectedRowIndex =
+                                              selected ? index : -1;
+                                        }
+                                      });
+                                    },
+                                    cells: [
+                                      DataCell(
+                                        Text('$windowId'),
+                                      ),
+                                      DataCell(
+                                        Text(type),
+                                      ),
+                                      DataCell(
+                                        IconButton(
+                                          icon:
+                                              const Icon(Icons.delete_outlined),
+                                          onPressed: () {
+                                            closeWindow(windowId);
+                                            resetWindowId(windowId);
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      flex: 1,
+                      child: Container(),
+                    ),
+                    Expanded(
+                      flex: 30,
+                      child: Column(
+                        // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Card.outlined(
+                            margin: const EdgeInsets.symmetric(horizontal: 100),
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(26, 0, 26, 12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  const Padding(
+                                    padding:
+                                        EdgeInsets.only(top: 16, bottom: 16),
+                                    child: Text(
+                                      'New Window',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16.0,
+                                      ),
+                                    ),
+                                  ),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      OutlinedButton(
+                                        onPressed: () async {
+                                          final windowId =
+                                              await createRegularWindow(
+                                                  windowSettings[
+                                                      'regularSize']);
+                                          await setWindowId(windowId);
+                                          setState(() {
+                                            selectedRowIndex =
+                                                windows.indexWhere((window) =>
+                                                    window['id'] == windowId);
+                                          });
+                                        },
+                                        child: const Text('Regular'),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      OutlinedButton(
+                                        onPressed: () async {
+                                          final windowId =
+                                              await createFloatingRegularWindow(
+                                                  windowSettings[
+                                                      'floatingRegularSize']);
+                                          await setWindowId(windowId);
+                                          setState(() {
+                                            selectedRowIndex =
+                                                windows.indexWhere((window) =>
+                                                    window['id'] == windowId);
+                                          });
+                                        },
+                                        child: const Text('Floating Regular'),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      OutlinedButton(
+                                        onPressed: () async {
+                                          final windowId =
+                                              await createDialogWindow(
+                                                  windowSettings['dialogSize'],
+                                                  selectedRowIndex >= 0
+                                                      ? windows[
+                                                              selectedRowIndex]
+                                                          ['id']
+                                                      : null);
+                                          await setWindowId(windowId);
+                                        },
+                                        child: Text(selectedRowIndex >= 0
+                                            ? 'Dialog of ID ${windows[selectedRowIndex]['id']}'
+                                            : 'Dialog'),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      OutlinedButton(
+                                        onPressed: selectedRowIndex >= 0
+                                            ? () async {
+                                                final parentSize =
+                                                    await getWindowSize(windows[
+                                                            selectedRowIndex]
+                                                        ['id']);
+                                                final Rect clampedAnchorRect =
+                                                    Rect.fromLTWH(
+                                                        windowSettings[
+                                                                'anchorRect']
+                                                            .left
+                                                            .clamp(
+                                                                0,
+                                                                parentSize
+                                                                    .width),
+                                                        windowSettings[
+                                                                'anchorRect']
+                                                            .top
+                                                            .clamp(
+                                                                0,
+                                                                parentSize
+                                                                    .height),
+                                                        windowSettings[
+                                                                'anchorRect']
+                                                            .width
+                                                            .clamp(
+                                                                0,
+                                                                parentSize
+                                                                    .width),
+                                                        windowSettings[
+                                                                'anchorRect']
+                                                            .height
+                                                            .clamp(
+                                                                0,
+                                                                parentSize
+                                                                    .height));
+                                                final windowId =
+                                                    await createSatelliteWindow(
+                                                  windows[selectedRowIndex]
+                                                      ['id'],
+                                                  windowSettings[
+                                                      'satelliteSize'],
+                                                  clampedAnchorRect,
+                                                  FlutterViewPositioner(
+                                                    parentAnchor:
+                                                        positionerSettings[
+                                                                positionerIndex]
+                                                            ['parentAnchor'],
+                                                    childAnchor:
+                                                        positionerSettings[
+                                                                positionerIndex]
+                                                            ['childAnchor'],
+                                                    offset: positionerSettings[
+                                                            positionerIndex]
+                                                        ['offset'],
+                                                    constraintAdjustment:
+                                                        positionerSettings[
+                                                                positionerIndex]
+                                                            [
+                                                            'constraintAdjustments'],
+                                                  ),
+                                                );
+                                                await setWindowId(windowId);
+                                                setState(() {
+                                                  // Cycle through presets when the last one (Custom preset) is not selected
+                                                  if (positionerIndex !=
+                                                      positionerSettings
+                                                              .length -
+                                                          1) {
+                                                    positionerIndex =
+                                                        (positionerIndex + 1) %
+                                                            (positionerSettings
+                                                                    .length -
+                                                                1);
+                                                  }
+                                                });
+                                              }
+                                            : null,
+                                        child: Text(selectedRowIndex >= 0
+                                            ? 'Satellite of ID ${windows[selectedRowIndex]['id']}'
+                                            : 'Satellite'),
+                                      ),
+                                      const SizedBox(height: 14),
+                                      Container(
+                                        alignment: Alignment.bottomRight,
+                                        child: TextButton(
+                                          child: const Text('SETTINGS'),
+                                          onPressed: () {
+                                            windowSettingsDialog(
+                                                    context, windowSettings)
+                                                .then(
+                                              (Map<String, dynamic>? settings) {
+                                                setState(() {
+                                                  if (settings != null) {
+                                                    windowSettings = settings;
+                                                  }
+                                                });
+                                              },
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Card.outlined(
+                            margin: const EdgeInsets.symmetric(horizontal: 100),
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(20, 0, 12, 12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  const Padding(
+                                    padding:
+                                        EdgeInsets.only(top: 16, bottom: 6),
+                                    child: Text(
+                                      'Positioner',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16.0,
+                                      ),
+                                    ),
+                                  ),
+                                  ListTile(
+                                    title: const Text('Preset'),
+                                    subtitle: DropdownButton(
+                                      items: positionerSettings
+                                          .map((map) => map['name'] as String)
+                                          .toList()
+                                          .map<DropdownMenuItem<String>>(
+                                              (String value) {
+                                        return DropdownMenuItem<String>(
+                                          value: value,
+                                          child: Text(value),
+                                        );
+                                      }).toList(),
+                                      value: positionerSettings
+                                          .map((map) => map['name'] as String)
+                                          .toList()[positionerIndex],
+                                      isExpanded: true,
+                                      focusColor: Colors.transparent,
+                                      onChanged: (String? value) {
+                                        setState(() {
+                                          positionerIndex = positionerSettings
+                                              .map((map) =>
+                                                  map['name'] as String)
+                                              .toList()
+                                              .indexOf(value!);
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Container(
+                                    alignment: Alignment.bottomRight,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(right: 8),
+                                      child: TextButton(
+                                        child: const Text('CUSTOM PRESET'),
+                                        onPressed: () {
+                                          customPositionerDialog(
+                                                  context,
+                                                  positionerSettings[
+                                                      positionerSettings
+                                                              .length -
+                                                          1])
+                                              .then(
+                                            (Map<String, dynamic>? settings) {
+                                              setState(() {
+                                                if (settings != null) {
+                                                  positionerSettings[
+                                                      positionerSettings
+                                                              .length -
+                                                          1] = settings;
+                                                  positionerIndex =
+                                                      positionerSettings
+                                                              .length -
+                                                          1;
+                                                }
+                                              });
+                                            },
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Container(),
+                    ),
+                  ],
                 ),
-                child: const Text('Create Regular Window'),
-              ),
+              ],
             ),
-            const SizedBox(height: 16),
-            GestureDetector(
-              onTap: () async {
-                final id =
-                    await createFloatingRegularWindow(const Size(300, 300));
-                setWindowId(id);
-              },
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  border: Border.all(width: 2),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Text('Create Floating Regular Window'),
-              ),
-            ),
-            const SizedBox(height: 16),
-            GestureDetector(
-              onTap: () async {
-                final id = await createDialogWindow(const Size(200, 200),
-                    windows.isNotEmpty ? windows.last : null);
-                setWindowId(id);
-              },
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  border: Border.all(width: 2),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Text('Create Dialog Window'),
-              ),
-            ),
-            const SizedBox(height: 16),
-            GestureDetector(
-              onTap: windows.isNotEmpty
-                  ? () async {
-                      const FlutterViewPositioner positioner =
-                          FlutterViewPositioner(
-                        parentAnchor: FlutterViewPositionerAnchor.left,
-                        childAnchor: FlutterViewPositionerAnchor.left,
-                        offset: Offset(0, 50),
-                        constraintAdjustment: {
-                          FlutterViewPositionerConstraintAdjustment.slideX,
-                          FlutterViewPositionerConstraintAdjustment.slideY,
-                        },
-                      );
-                      final id = await createSatelliteWindow(
-                          windows.last,
-                          const Size(200, 300),
-                          const Rect.fromLTWH(0, 0, 400, 400),
-                          positioner);
-                      setWindowId(id);
-                    }
-                  : null,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    width: 2,
-                    color: windows.isNotEmpty ? Colors.black : Colors.grey,
-                  ),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  'Create Satellite Window',
-                  style: TextStyle(
-                    color: windows.isNotEmpty
-                        ? null
-                        : Colors.grey, // Set text color to grey when disabled
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            GestureDetector(
-              onTap: windows.isNotEmpty
-                  ? () {
-                      final id = windows.removeLast();
-                      closeWindow(id);
-                      resetWindowId(id);
-                    }
-                  : null,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    width: 2,
-                    color: windows.isNotEmpty ? Colors.black : Colors.grey,
-                  ),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  'Close Window',
-                  style: TextStyle(
-                    color: windows.isNotEmpty
-                        ? null
-                        : Colors.grey, // Set text color to grey when disabled
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+          Expanded(
+            flex: 10,
+            child: Container(),
+          ),
+        ],
       ),
     );
   }
@@ -212,15 +605,25 @@ class _MyHomePageState extends State<MyHomePage> {
     windowChannel.invokeMethod('closeWindow', [windowId]);
   }
 
-  void setWindowId(int windowId) {
+  Future<void> setWindowId(int windowId) async {
+    final windowType = await getWindowType(windowId);
     setState(() {
-      windows.add(windowId);
+      windows.add({"id": windowId, "type": windowType});
     });
   }
 
   void resetWindowId(int windowId) {
+    final index = windows.indexWhere((window) => window['id'] == windowId);
+    final selectedWindowId =
+        selectedRowIndex != -1 ? windows[selectedRowIndex]['id'] : -1;
     setState(() {
-      windows.remove(windowId);
+      windows.remove(windows[index]);
+      if (selectedWindowId != -1) {
+        selectedRowIndex =
+            windows.indexWhere((window) => window['id'] == selectedWindowId);
+      } else {
+        selectedRowIndex = -1;
+      }
     });
   }
 
@@ -230,5 +633,17 @@ class _MyHomePageState extends State<MyHomePage> {
         resetWindowId(call.arguments);
         break;
     }
+  }
+
+  Future<String> getWindowType(int windowId) async {
+    final windowType =
+        await windowChannel.invokeMethod('getWindowType', [windowId]);
+    return windowType;
+  }
+
+  Future<Size> getWindowSize(int windowId) async {
+    final sizeMap =
+        await windowChannel.invokeMapMethod('getWindowSize', [windowId]);
+    return Size(sizeMap!['width'], sizeMap['height']);
   }
 }

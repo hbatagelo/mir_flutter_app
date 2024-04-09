@@ -20,6 +20,10 @@ public:
         xdg_toplevel* parent);
     ~SatelliteWindow() override;
 
+protected:
+    void handle_keyboard_key(wl_keyboard* keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state)
+        override;
+
 private:
     mir_satellite_surface_v1* const mir_satellite_surface;
 

@@ -4,6 +4,7 @@
 #include "xdg-shell.h"
 
 #include <gtk/gtk.h>
+#include <linux/input-event-codes.h>
 
 namespace mfa = mir_flutter_app;
 
@@ -43,6 +44,24 @@ mfa::SatelliteWindow::~SatelliteWindow()
     if (mir_satellite_surface)
     {
         mir_satellite_surface_v1_destroy(mir_satellite_surface);
+    }
+}
+
+void mfa::SatelliteWindow::handle_keyboard_key(
+    wl_keyboard* keyboard,
+    uint32_t serial,
+    uint32_t time,
+    uint32_t key,
+    uint32_t state)
+{
+    DecoratedWindow::handle_keyboard_key(keyboard, serial, time, key, state);
+
+    if (state == WL_KEYBOARD_KEY_STATE_RELEASED)
+    {
+        if (key == KEY_ESC)
+        {
+            Globals::instance().close_window(static_cast<wl_surface*>(*this));
+        }
     }
 }
 

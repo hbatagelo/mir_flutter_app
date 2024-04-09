@@ -36,11 +36,9 @@ void mfa::FloatingRegularWindow::handle_keyboard_key(
 
     if (state == WL_KEYBOARD_KEY_STATE_RELEASED)
     {
-        switch (key)
+        if (key == KEY_ESC)
         {
-        case KEY_ESC:
             Globals::instance().close_window(static_cast<wl_surface*>(*this));
-            break;
         }
     }
 }

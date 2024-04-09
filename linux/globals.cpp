@@ -122,6 +122,7 @@ auto mfa::Globals::make_satellite_window(MirWindow* window) -> std::unique_ptr<T
     mir_positioner_v1_set_anchor(positioner, window->positioner.anchor);
     mir_positioner_v1_set_gravity(positioner, window->positioner.gravity);
     mir_positioner_v1_set_offset(positioner, window->positioner.offset.dx, window->positioner.offset.dy);
+    mir_positioner_v1_set_constraint_adjustment(positioner, window->positioner.constraint_adjustment);
 
     if (!window->parent)
     {
