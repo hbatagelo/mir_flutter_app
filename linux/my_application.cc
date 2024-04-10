@@ -35,16 +35,16 @@ G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
 
 G_DEFINE_TYPE(MirWindow, mir_window, GTK_TYPE_WINDOW)
 
-template<typename From, typename To>
+template<FlValueType From, typename To>
 To arg_from_to(FlValue* args, size_t index)
 {
-    static_assert(std::is_same_v<From, float> || std::is_same_v<From, int>, "Unsupported 'From' type.");
+    static_assert(From == FL_VALUE_TYPE_FLOAT || From == FL_VALUE_TYPE_INT, "Unsupported Flutter type.");
 
-    if constexpr(std::is_same_v<From, float>)
+    if constexpr(From == FL_VALUE_TYPE_FLOAT)
     {
         return static_cast<To>(fl_value_get_float(fl_value_get_list_value(args, index)));
     }
-    else if constexpr(std::is_same_v<From, int>)
+    else if constexpr(From == FL_VALUE_TYPE_INT)
     {
         return static_cast<To>(fl_value_get_int(fl_value_get_list_value(args, index)));
     }
@@ -195,7 +195,9 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
             return;
         }
 
-        MirWindowSize const size{.width = arg_from_to<float, int>(args, 0), .height = arg_from_to<float, int>(args, 1)};
+        MirWindowSize const size{
+            .width = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 0),
+            .height = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 1)};
 
         auto const new_id{get_new_window_id(self->windows)};
         MirWindow* const mir_window{mir_window_new(MirWindowArchetype::regular, size, {}, nullptr, new_id)};
@@ -216,7 +218,9 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
             fl_method_call_respond_error(method_call, "Bad Arguments", "", nullptr, nullptr);
             return;
         }
-        MirWindowSize const size{.width = arg_from_to<float, int>(args, 0), .height = arg_from_to<float, int>(args, 1)};
+        MirWindowSize const size{
+            .width = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 0),
+            .height = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 1)};
 
         auto const new_id{get_new_window_id(self->windows)};
         MirWindow* const mir_window{mir_window_new(MirWindowArchetype::floating_regular, size, {}, nullptr, new_id)};
@@ -247,8 +251,10 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
             fl_method_call_respond_error(method_call, "Bad Arguments", "", nullptr, nullptr);
             return;
         }
-        auto const parent_id{arg_from_to<int, int>(args, 0)};
-        MirWindowSize const size{.width = arg_from_to<float, int>(args, 1), .height = arg_from_to<float, int>(args, 2)};
+        auto const parent_id{arg_from_to<FL_VALUE_TYPE_INT, int>(args, 0)};
+        MirWindowSize const size{
+            .width = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 1),
+            .height = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 2)};
 
         // Convert from anchor (originally a FlutterViewPositionerAnchor) to mir_positioner_v1_gravity
         auto const gravity{
@@ -266,18 +272,20 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
                 case MIR_POSITIONER_V1_ANCHOR_TOP_RIGHT: return MIR_POSITIONER_V1_GRAVITY_BOTTOM_LEFT;
                 case MIR_POSITIONER_V1_ANCHOR_BOTTOM_RIGHT: return MIR_POSITIONER_V1_GRAVITY_TOP_LEFT;
                 }
-            }(arg_from_to<int, mir_positioner_v1_anchor>(args, 8))};
+            }(arg_from_to<FL_VALUE_TYPE_INT, mir_positioner_v1_anchor>(args, 8))};
 
         MirWindowPositioner const positioner{
             .anchor_rect = {
-                .x = arg_from_to<float, int>(args, 3),
-                .y = arg_from_to<float, int>(args, 4),
-                .width = arg_from_to<float, int>(args, 5),
-                .height = arg_from_to<float, int>(args, 6)},
-            .anchor = arg_from_to<int, mir_positioner_v1_anchor>(args, 7),
+                .x = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 3),
+                .y = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 4),
+                .width = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 5),
+                .height = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 6)},
+            .anchor = arg_from_to<FL_VALUE_TYPE_INT, mir_positioner_v1_anchor>(args, 7),
             .gravity = gravity,
-            .offset = {.dx = arg_from_to<float, int>(args, 9), .dy = arg_from_to<float, int>(args, 10)},
-            .constraint_adjustment = arg_from_to<int, uint32_t>(args, 11)
+            .offset = {
+                .dx = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 9),
+                .dy = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 10)},
+            .constraint_adjustment = arg_from_to<FL_VALUE_TYPE_INT, uint32_t>(args, 11)
         };
 
         if (!self->windows.contains(parent_id))
@@ -309,9 +317,11 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
             fl_method_call_respond_error(method_call, "Bad Arguments", "", nullptr, nullptr);
             return;
         }
-        MirWindowSize const size{.width = arg_from_to<float, int>(args, 0), .height = arg_from_to<float, int>(args, 1)};
+        MirWindowSize const size{
+            .width = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 0),
+            .height = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 1)};
 
-        auto const parent_id{arg_from_to<int, int>(args, 2)};
+        auto const parent_id{arg_from_to<FL_VALUE_TYPE_INT, int>(args, 2)};
         if (parent_id >= 0 && !self->windows.contains(parent_id))
         {
             fl_method_call_respond_error(method_call, "Bad Arguments", "", nullptr, nullptr);
@@ -338,7 +348,7 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
             return;
         }
 
-        auto const window_id{arg_from_to<int, int>(args, 0)};
+        auto const window_id{arg_from_to<FL_VALUE_TYPE_INT, int>(args, 0)};
         if (!self->windows.contains(window_id))
         {
             fl_method_call_respond_error(method_call, "Bad Arguments", "", nullptr, nullptr);
@@ -358,7 +368,7 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
             return;
         }
 
-        auto window_id{arg_from_to<int, int>(args, 0)};
+        auto window_id{arg_from_to<FL_VALUE_TYPE_INT, int>(args, 0)};
         if (!self->windows.contains(window_id))
         {
             fl_method_call_respond_error(method_call, "Bad Arguments", "", nullptr, nullptr);
@@ -389,7 +399,7 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
             return;
         }
 
-        auto const window_id{arg_from_to<int, int>(args, 0)};
+        auto const window_id{arg_from_to<FL_VALUE_TYPE_INT, int>(args, 0)};
         if (!self->windows.contains(window_id))
         {
             fl_method_call_respond_error(method_call, "Bad Arguments", "", nullptr, nullptr);

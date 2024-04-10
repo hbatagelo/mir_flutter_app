@@ -9,12 +9,6 @@ Future<Map<String, dynamic>?> customPositionerDialog(
       barrierDismissible: true,
       context: context,
       builder: (BuildContext ctx) {
-        // Dialog data
-        // String name = settings['name'].toString();
-        // int weight = settings['weight'] as int;
-        // int height = settings['height'] as int;
-        // int age = settings['age'] as int;
-        // bool pushups = settings['pushups'].toString() == 'true';
         String name = settings['name'].toString();
         Offset offset = settings['offset'] as Offset;
         final List<String> anchor = FlutterViewPositionerAnchor.values
@@ -58,23 +52,6 @@ Future<Map<String, dynamic>?> customPositionerDialog(
               child: Text('Custom Positioner'),
             ),
             children: [
-              // Padding(
-              //   padding: const EdgeInsets.all(8),
-              //   child: TextFormField(
-              //       initialValue: name,
-              //       decoration: const InputDecoration(
-              //           icon: Icon(Icons.label), labelText: 'Name'),
-              //       onChanged: (String value) => setState(() => name = value),),
-              // ),
-              // Padding(
-              //   padding: const EdgeInsets.all(8),
-              //   child: TextFormField(
-              //       initialValue: weight.toString(),
-              //       decoration: const InputDecoration(
-              //           icon: Icon(Icons.assessment), labelText: 'Weight'),
-              //       onChanged: (String value) =>
-              //           setState(() => weight = int.parse(value),),),
-              // ),
               Expanded(
                 child: ListTile(
                   title: const Text('Parent Anchor'),
@@ -155,21 +132,6 @@ Future<Map<String, dynamic>?> customPositionerDialog(
                   ),
                 ),
               ),
-              // Padding(
-              //   padding: const EdgeInsets.all(8),
-              //   child: Text('Age $age'),
-              // ),
-              // Slider(
-              //     value: age.toDouble(),
-              //     min: 0,
-              //     max: 150,
-              //     divisions: 5,
-              //     label: age.toString(),
-              //     onChanged: (double value) {
-              //       setState(() {
-              //         age = value.round();
-              //       });
-              //     }),
               const SizedBox(
                 height: 8,
               ),
@@ -262,27 +224,6 @@ Future<Map<String, dynamic>?> customPositionerDialog(
                                   ]),
                                 ]),
                           ),
-                          // Checkbox(
-                          //     value: pushups,
-                          //     onChanged: (bool? value) =>
-                          //         setState(() => pushups = value!),),
-                          // const Text('Push ups'),
-                          // const SizedBox(
-                          //   width: 20,
-                          // ),
-                          // Checkbox(
-                          //     value: pushups,
-                          //     onChanged: (bool? value) =>
-                          //         setState(() => pushups = value!),),
-                          // const Text('Push ups'),
-                          // const SizedBox(
-                          //   width: 20,
-                          // ),
-                          // Checkbox(
-                          //     value: pushups,
-                          //     onChanged: (bool? value) =>
-                          //         setState(() => pushups = value!),),
-                          // const Text('Push ups'),
                         ],
                       ),
                     ],
@@ -324,11 +265,6 @@ Future<Map<String, dynamic>?> customPositionerDialog(
                     }
                     Navigator.of(context, rootNavigator: true)
                         .pop(<String, dynamic>{
-                      // 'name': name,
-                      // 'weight': weight,
-                      // 'height': height,
-                      // 'age': age,
-                      // 'pushups': pushups,
                       'name': name,
                       'parentAnchor':
                           FlutterViewPositionerAnchor.values.firstWhere(
@@ -354,73 +290,6 @@ Future<Map<String, dynamic>?> customPositionerDialog(
               const SizedBox(
                 height: 8,
               ),
-
-              // GestureDetector(
-              //   onTap: () {
-              //     Set<FlutterViewPositionerConstraintAdjustment>
-              //         constraintAdjustments = {};
-              //     if (slideX) {
-              //       constraintAdjustments
-              //           .add(FlutterViewPositionerConstraintAdjustment.slideX);
-              //     }
-              //     if (slideY) {
-              //       constraintAdjustments
-              //           .add(FlutterViewPositionerConstraintAdjustment.slideY);
-              //     }
-              //     if (flipX) {
-              //       constraintAdjustments
-              //           .add(FlutterViewPositionerConstraintAdjustment.flipX);
-              //     }
-              //     if (flipY) {
-              //       constraintAdjustments
-              //           .add(FlutterViewPositionerConstraintAdjustment.flipY);
-              //     }
-              //     if (resizeX) {
-              //       constraintAdjustments
-              //           .add(FlutterViewPositionerConstraintAdjustment.resizeX);
-              //     }
-              //     if (resizeY) {
-              //       constraintAdjustments
-              //           .add(FlutterViewPositionerConstraintAdjustment.resizeY);
-              //     }
-              //     Navigator.of(context, rootNavigator: true)
-              //         .pop(<String, dynamic>{
-              //       // 'name': name,
-              //       // 'weight': weight,
-              //       // 'height': height,
-              //       // 'age': age,
-              //       // 'pushups': pushups,
-              //       'parentAnchor':
-              //           FlutterViewPositionerAnchor.values.firstWhere(
-              //         (e) =>
-              //             e.toString() ==
-              //             'FlutterViewPositionerAnchor.$parentAnchor',
-              //         orElse: () => FlutterViewPositionerAnchor.left,
-              //       ),
-              //       'childAnchor':
-              //           FlutterViewPositionerAnchor.values.firstWhere(
-              //         (e) =>
-              //             e.toString() ==
-              //             'FlutterViewPositionerAnchor.$childAnchor',
-              //         orElse: () => FlutterViewPositionerAnchor.left,
-              //       ),
-              //       'offset': offset,
-              //       'constraintAdjustments': constraintAdjustments,
-              //     });
-              //   },
-              //   child: Container(
-              //     padding: const EdgeInsets.all(16),
-              //     // decoration: BoxDecoration(
-              //     //   border: Border.all(
-              //     //     width: 2,
-              //     //   ),
-              //     //   borderRadius: BorderRadius.circular(4),
-              //     // ),
-              //     child: const Center(
-              //       child: Text('Apply'),
-              //     ),
-              //   ),
-              // ),
             ],
           );
         });
