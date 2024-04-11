@@ -22,19 +22,26 @@ A prototype application demonstrating desktop multi-window support for Flutter o
 
 The application requires a Wayland compositor with support for the [Mir shell](https://github.com/canonical/mir/blob/main/wayland-protocols/mir-shell-unstable-v1.xml) protocol extension (`mir_shell_unstable_v1`).
 
-In the following, we'll use the miral-shell example that comes with [Mir](https://mir-server.io/). Miral-shell supports the required extension and provides a default "floating" window manager that is suitable for demonstrating the different types of desktop windows.
+In the following, we'll use [Miriway](https://snapcraft.io/miriway), a customizable Wayland compositor that supports Mir shell and provides a default "floating" window manager suitable for demonstrating the different types of desktop windows.
 
-See ['Getting and Using Mir'](https://canonical-mir.readthedocs-hosted.com/stable/getting_and_using_mir/) for instructions on installing Mir.
-
-After installing Mir, open a Virtual Terminal and run:
+To make sure that Mir shell is supported, install the miriway snap package from the "latest/edge" channel:
 
 ```sh
-miral-app
+sudo snap install miriway --edge --classic
 ```
 
-From the new graphical shell, launch a terminal and then run:
+After the installation, open a Virtual Terminal and launch Miriway with the `--add-wayland-extensions mir_shell_v1` command line option:
 
 ```sh
+miriway --add-wayland-extensions mir_shell_v1
+```
+
+In the new graphical shell, press <kbd>Ctrl-Alt-T</kbd> to launch a terminal.
+
+Navigate to the directory containing the source and start the application:
+
+```sh
+cd mir_flutter_app
 flutter run
 ```
 
@@ -52,9 +59,11 @@ The following input actions are available for the new windows:
 
 ## Dart API
 
+The prototype introduces the following API for managing the desktop windows from Flutter. See [main.dart](/lib/main.dart) for an example of usage.
+
 ### Creating and Destroying Windows
 
-*   Creates a **regular** window:
+*   #### Creates a regular window:
     ```dart
     Future<int> createRegularWindow(Size size) async
     ```
@@ -63,7 +72,7 @@ The following input actions are available for the new windows:
 
     The return value is a future that returns the ID of the newly created window.
 
-*   Creates a **floating regular** window:
+*   #### Creates a floating regular window:
     ```dart
     Future<int> createFloatingRegularWindow(Size size) async
     ```
@@ -72,7 +81,7 @@ The following input actions are available for the new windows:
 
     The return value is a future that returns the ID of the newly created window.
 
-*   Creates a **dialog** window:
+*   #### Creates a dialog window:
     ```dart
     Future<int> createDialogWindow(Size size, int? parent) async
     ```
@@ -83,7 +92,7 @@ The following input actions are available for the new windows:
 
     The return value is a future that returns the ID of the newly created window.
 
-*   Creates a **satellite** window:
+*   #### Creates a satellite window:
     ```dart
     Future<int> createSatelliteWindow(
         int parent,
@@ -99,7 +108,7 @@ The following input actions are available for the new windows:
 
     The return value is a future that returns the ID of the newly created window.
 
-* Closes a window:
+* #### Closes a window:
     ```dart
     void closeWindow(int windowId)
     ```
@@ -110,9 +119,9 @@ The following input actions are available for the new windows:
 
 ### Querying Window State
 
-These state querying functions are helper functions used by the prototype application to display the type of each window in the window list and ensure that a user-defined anchor rectangle stays within the size of the parent surface.
+These state querying functions are helper functions used by the prototype to display the type of each window in the window list and ensure that a user-defined anchor rectangle stays within the size of the parent surface.
 
-*   Queries the window type:
+* #### Queries the window type:
     ```dart
     Future<String> getWindowType(int windowId) async
     ```
@@ -121,7 +130,7 @@ These state querying functions are helper functions used by the prototype applic
 
     The return value is a future that returns a string describing the window type: "regular", "floating_regular", "dialog", "satellite".
 
-*   Queries the window size:
+* #### Queries the window size:
     ```dart
     Future<Size> getWindowSize(int windowId) async;
     ```
@@ -132,7 +141,36 @@ These state querying functions are helper functions used by the prototype applic
 
 ### Defining a Positioner
 
-TODO
+Positioning preferences are created using the[`FlutterViewPositioner`](\lib\flutter_view_positioner.dart) class. Its attributes specify the rules for the placement of a child window relative to the anchor rectangle of the parent window, as illustrated below:
+
+![positioner](positioning.svg)
+
+The attributes are as follows:
+
+* `parentAnchor`: Anchor point for the anchor rectangle. It can be any of the following values of the [`FlutterViewPositionerAnchor`](\lib\flutter_view_positioner.dart) enumeration:
+    * `center`: Centered.
+    * `top`: Centered at the top edge.
+    * `bottom`:  Centered at the bottom edge.
+    * `left`: Centered at the left edge.
+    * `right`: Centered at the right edge.
+    * `topLeft`: Top-left corner.
+    * `bottomLeft`: Bottom-left corner.
+    * `topRight`: Top-Right corner.
+    * `bottomRight`: Bottom-Right corner.
+
+* `childAnchor`: Anchor point for the child window. It can be any value of the [`FlutterViewPositionerAnchor`](\lib\flutter_view_positioner.dart) enumeration.
+* `offset`: The [`Offset`](https://api.flutter.dev/flutter/dart-ui/Offset-class.html) from the parent anchor to the child anchor.
+* `constraintAdjustment`: A set of [`FlutterViewPositionerConstraintAdjustment`](\lib\flutter_view_positioner.dart) enumeration values defining how the compositor will adjust the position of the window, if the unadjusted position would result in the surface being partly constrained:
+    * `slideX`: Adjust the offset along the X axis.
+    * `slideY`: Adjust the offset along the Y axis.
+    * `flipX`: Reverse the anchor points and offset along the X axis.
+    * `flipY`: Reverse the anchor points and offset along the Y axis.
+    * `resizeX`: Adjust the size of the child window along the X axis.
+    * `resizeY`: Adjust the size of the child window along the Y axis.
+
+    When combined, the adjustments follow a defined precedence: 1) Flip. 2) Slide. 3) Resize.
+
+    Whether the window is considered "constrained" depends on the compositor. For example, the surface may be partly outside the outputs's "work area", thus necessitating the child window's position be adjusted until it is entirely inside the work area.
 
 ## How It Works
 
