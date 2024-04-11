@@ -11,7 +11,7 @@ A prototype application demonstrating desktop multi-window support for Flutter o
     git clone https://github.com/hbatagelo/mir_flutter_app.git
     cd mir_flutter_app
     ```
-2. Install the Flutter SDK following the [guide for building Flutter native desktop apps on Linux]((https://docs.flutter.dev/get-started/install/linux/desktop)).
+2. Install the Flutter SDK following the [guide for building Flutter native desktop apps on Linux](https://docs.flutter.dev/get-started/install/linux/desktop).
 3. Build with:
 
     ```sh
