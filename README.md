@@ -141,13 +141,13 @@ These state querying functions are helper functions used by the prototype to dis
 
 ### Defining a Positioner
 
-Positioning preferences are created using the[`FlutterViewPositioner`](\lib\flutter_view_positioner.dart) class. Its attributes specify the rules for the placement of a child window relative to the anchor rectangle of the parent window, as illustrated below:
+Positioning preferences are created using the[`FlutterViewPositioner`](/lib/flutter_view_positioner.dart) class. Its attributes specify the rules for the placement of a child window relative to the anchor rectangle of the parent window, as illustrated below:
 
 ![positioner](positioning.svg)
 
 The attributes are as follows:
 
-* `parentAnchor`: Anchor point for the anchor rectangle. It can be any of the following values of the [`FlutterViewPositionerAnchor`](\lib\flutter_view_positioner.dart) enumeration:
+* `parentAnchor`: Anchor point for the anchor rectangle. It can be any of the following values of the [`FlutterViewPositionerAnchor`](/lib/flutter_view_positioner.dart) enumeration:
     * `center`: Centered.
     * `top`: Centered at the top edge.
     * `bottom`:  Centered at the bottom edge.
@@ -158,9 +158,9 @@ The attributes are as follows:
     * `topRight`: Top-Right corner.
     * `bottomRight`: Bottom-Right corner.
 
-* `childAnchor`: Anchor point for the child window. It can be any value of the [`FlutterViewPositionerAnchor`](\lib\flutter_view_positioner.dart) enumeration.
+* `childAnchor`: Anchor point for the child window. It can be any value of the [`FlutterViewPositionerAnchor`](/lib/flutter_view_positioner.dart) enumeration.
 * `offset`: The [`Offset`](https://api.flutter.dev/flutter/dart-ui/Offset-class.html) from the parent anchor to the child anchor.
-* `constraintAdjustment`: A set of [`FlutterViewPositionerConstraintAdjustment`](\lib\flutter_view_positioner.dart) enumeration values defining how the compositor will adjust the position of the window, if the unadjusted position would result in the surface being partly constrained:
+* `constraintAdjustment`: A set of [`FlutterViewPositionerConstraintAdjustment`](/lib/flutter_view_positioner.dart) enumeration values defining how the compositor will adjust the position of the window, if the unadjusted position would result in the surface being partly constrained:
     * `slideX`: Adjust the offset along the X axis.
     * `slideY`: Adjust the offset along the Y axis.
     * `flipX`: Reverse the anchor points and offset along the X axis.
