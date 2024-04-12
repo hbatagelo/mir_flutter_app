@@ -51,7 +51,6 @@ void mfa::RegularWindow::handle_keyboard_key(
         switch (key)
         {
         case KEY_ESC:
-            // TODO: remove satellites first?
             Globals::instance().close_window(static_cast<wl_surface*>(*this));
             break;
         }

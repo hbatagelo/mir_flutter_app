@@ -30,10 +30,10 @@ To make sure that Mir shell is supported, install the miriway snap package from 
 sudo snap install miriway --edge --classic
 ```
 
-After the installation, open a Virtual Terminal and launch Miriway with the `--add-wayland-extensions mir_shell_v1` command line option:
+After the installation, open a Virtual Terminal and launch Miriway:
 
 ```sh
-miriway --add-wayland-extensions mir_shell_v1
+miriway
 ```
 
 In the new graphical shell, press <kbd>Ctrl-Alt-T</kbd> to launch a terminal.

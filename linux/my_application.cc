@@ -113,6 +113,11 @@ static void mir_window_destroy(GtkWidget* widget)
 {
     MirWindow* const self{MIR_WINDOW(widget)};
 
+    if (self->parent)
+    {
+        self->parent->children.erase(self);
+    }
+
     if (MyApplication* const application{MY_APPLICATION(gtk_window_get_application(GTK_WINDOW(self)))})
     {
         g_autoptr(FlValue) args{fl_value_new_int(self->id)};
@@ -158,7 +163,14 @@ static MirWindow* mir_window_new(
     self->size = size;
     self->positioner = positioner;
     self->parent = parent;
+    self->children = {};
     self->id = id;
+
+    if (self->parent)
+    {
+        self->parent->children.insert(self);
+    }
+
     return self;
 }
 

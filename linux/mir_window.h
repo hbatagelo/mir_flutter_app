@@ -6,6 +6,7 @@
 #include "mir-shell.h"
 
 #include <memory>
+#include <set>
 
 namespace mir_flutter_app
 {
@@ -59,6 +60,7 @@ struct _MirWindow
     int id;
 
     MirWindow* parent;
+    std::set<MirWindow*> children;
     MirWindowArchetype archetype;
 
     wl_surface* surface;

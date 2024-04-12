@@ -5,6 +5,7 @@
 #include <cairo.h>
 #include <linux/input-event-codes.h>
 
+#include <functional>
 #include <numbers>
 #include <string>
 
@@ -25,10 +26,39 @@ void mfa::DecoratedWindow::handle_mouse_button(
 {
     ToplevelWindow::handle_mouse_button(pointer, serial, time, button, state);
 
-    // TODO: check if there's a dialog child
+    // Prevent the window from being closed if it has a dialog descendant.
+    //
+    // From the protocol:
     //     (1) A user should be able to move, resize, or hide an open dialog’s parent, but not
     //     close it or interact with its contents; and move, resize, or close the parent’s
     //     satellites if any, but not interact with their contents.
+    //
+    // TODO: Should this be handled by the compositor?
+    auto const any_descendant{[](MirWindow* window, std::function<bool(MirWindow*)> const& pred) -> bool
+        {
+            auto const impl{[&pred](MirWindow* window, auto const& self)
+                {
+                    if (pred(window))
+                        return true;
+
+                    return std::any_of(
+                        window->children.begin(),
+                        window->children.end(),
+                        [&self](MirWindow* child) { return self(child, self); });
+                }};
+
+            return std::any_of(
+                window->children.begin(),
+                window->children.end(),
+                [&](MirWindow* window) { return impl(window, impl); });
+        }};
+    if (any_descendant(
+        Globals::instance().window_for(static_cast<wl_surface*>(*this)),
+        [](MirWindow* descendant) { return descendant->archetype == MirWindowArchetype::dialog; }))
+    {
+        return;
+    }
+
     auto const pointer_on_close_button{[this]
         {
             auto const margin{10};
