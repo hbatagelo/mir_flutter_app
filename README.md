@@ -1,6 +1,6 @@
 # mir_flutter_app
 
-A prototype application demonstrating desktop multi-window support for Flutter on Linux.
+A reference application demonstrating multi-window support for Flutter on Linux using the Mir windowing language.
 
 ![teaser](screenshot.png)
 
@@ -251,3 +251,7 @@ When a method call is received from the Flutter app to create a window, the nati
 When a **popup** or **tip** window is created, an `xdg_popup` role is assigned to the `xdg_surface`, and an `xdg_positioner` object is used for placement.
 
 If the window type is **regular**, **floating regular**, **dialog**, or **satellite**, an `xdg_toplevel` role is assigned to the `xdg_surface`, and the Mir shell protocol extension is used to augment the state of the toplevel surface according to the corresponding Mir shell "archetype": `mir_regular_surface`, `mir_floating_regular_surface`, `mir_dialog_surface`, `mir_satellite_surface`. For these windows, the positioner is defined using a `mir_positioner` object.
+
+## Acknowledgments
+
+Special thanks to [Robert Ancell](https://github.com/robert-ancell) for providing the code which served as the starting point for this application.

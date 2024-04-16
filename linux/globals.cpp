@@ -265,53 +265,53 @@ void mfa::Globals::handle_wl_registry_global(
     char const* interface,
     uint32_t version)
 {
-    uint32_t version_;
-    std::string_view interface_name;
+    std::string_view name{interface};
+    bool bound{};
 
-    if (std::string_view{interface} == wl_compositor_interface.name && wl_compositor_interface.version >= 1)
+    if (!compositor_ && name == wl_compositor_interface.name && wl_compositor_interface.version >= 1)
     {
-        version_ = std::min(version, 4u);
-        interface_name = wl_compositor_interface.name;
-        compositor_ = static_cast<wl_compositor*>(wl_registry_bind(registry, id, &wl_compositor_interface, version_));
+        version = std::min(version, 4u);
+        compositor_ = static_cast<wl_compositor*>(wl_registry_bind(registry, id, &wl_compositor_interface, version));
+        bound = true;
     }
-    else if (std::string_view{interface} == wl_output_interface.name && wl_output_interface.version >= 1)
+    else if (!output_ && name == wl_output_interface.name && wl_output_interface.version >= 1)
     {
-        version_ = std::min(version, 4u);
-        interface_name = wl_output_interface.name;
-        output_ = static_cast<wl_output*>(wl_registry_bind(registry, id, &wl_output_interface, version_));
+        version = std::min(version, 4u);
+        output_ = static_cast<wl_output*>(wl_registry_bind(registry, id, &wl_output_interface, version));
+        bound = true;
     }
-    else if (std::string_view{interface} == wl_shm_interface.name && wl_shm_interface.version >= 1)
+    else if (!shm_ && name == wl_shm_interface.name && wl_shm_interface.version >= 1)
     {
-        version_ = std::min(version, 1u);
-        interface_name = wl_shm_interface.name;
-        shm_ = static_cast<wl_shm*>(wl_registry_bind(registry, id, &wl_shm_interface, version_));
+        version = std::min(version, 1u);
+        shm_ = static_cast<wl_shm*>(wl_registry_bind(registry, id, &wl_shm_interface, version));
+        bound = true;
         // Normally we'd add a listener to pick up the supported formats here
         // As luck would have it, I know that argb8888 is the only format we support :)
     }
-    else if (std::string_view{interface} == wl_seat_interface.name && wl_seat_interface.version >= 1)
+    else if (!seat_ && name == wl_seat_interface.name && wl_seat_interface.version >= 1)
     {
-        version_ = std::min(version, 4u);
-        interface_name = wl_seat_interface.name;
-        seat_ = static_cast<wl_seat*>(wl_registry_bind(registry, id, &wl_seat_interface, version_));
+        version = std::min(version, 4u);
+        seat_ = static_cast<wl_seat*>(wl_registry_bind(registry, id, &wl_seat_interface, version));
+        bound = true;
     }
-    else if (std::string_view{interface} == mir_shell_v1_interface.name && mir_shell_v1_interface.version >= 1)
+    else if (!mir_shell_ && name == mir_shell_v1_interface.name && mir_shell_v1_interface.version >= 1)
     {
-        version_ = std::min(version, 1u);
-        interface_name = mir_shell_v1_interface.name;
+        version = std::min(version, 1u);
         mir_shell_ =
             static_cast<mir_shell_v1*>(wl_registry_bind(registry, id, &mir_shell_v1_interface, std::min(version, 1u)));
+        bound = true;
     }
-    else if (std::string_view{interface} == xdg_wm_base_interface.name && xdg_wm_base_interface.version >= 1)
+    else if (!wm_base_ && name == xdg_wm_base_interface.name && xdg_wm_base_interface.version >= 1)
     {
-        version_ = std::min(version, 1u);
-        interface_name = xdg_wm_base_interface.name;
+        version = std::min(version, 1u);
         wm_base_ =
             static_cast<xdg_wm_base*>(wl_registry_bind(registry, id, &xdg_wm_base_interface, std::min(version, 1u)));
+        bound = true;
     }
 
-    if (!interface_name.empty())
+    if (bound)
     {
-        std::cout << "Bound to " << interface_name << " (v" << version_ << ")" << std::endl;
+        std::cout << "Bound to " << name << " (v" << version << ")" << std::endl;
     }
 }
 
