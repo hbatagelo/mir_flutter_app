@@ -1,4 +1,4 @@
-#include "decorated_window.h"
+#include "decorated_xdg_toplevel_window.h"
 #include "globals.h"
 #include "mir_window.h"
 
@@ -11,20 +11,24 @@
 
 namespace mfa = mir_flutter_app;
 
-mfa::DecoratedWindow::DecoratedWindow(wl_surface* surface, int32_t width, int32_t height, Configuration config) :
-    ToplevelWindow(surface, width, height),
+mfa::DecoratedXdgToplevelWindow::DecoratedXdgToplevelWindow(
+    wl_surface* surface,
+    int32_t width,
+    int32_t height,
+    Configuration config) :
+    XdgToplevelWindow(surface, width, height),
     config_{std::move(config)}
 {
 }
 
-void mfa::DecoratedWindow::handle_mouse_button(
+void mfa::DecoratedXdgToplevelWindow::handle_mouse_button(
     wl_pointer* pointer,
     uint32_t serial,
     uint32_t time,
     uint32_t button,
     uint32_t state)
 {
-    ToplevelWindow::handle_mouse_button(pointer, serial, time, button, state);
+    XdgToplevelWindow::handle_mouse_button(pointer, serial, time, button, state);
 
     // Prevent the window from being closed if it has a dialog descendant.
     //
@@ -33,7 +37,7 @@ void mfa::DecoratedWindow::handle_mouse_button(
     //     close it or interact with its contents; and move, resize, or close the parent’s
     //     satellites if any, but not interact with their contents.
     //
-    // TODO: Should this be handled by the compositor?
+    // TODO: Should this behavior be handled by the compositor?
     auto const any_descendant{[](MirWindow* window, std::function<bool(MirWindow*)> const& pred) -> bool
         {
             auto const impl{[&pred](MirWindow* window, auto const& self)
@@ -88,7 +92,7 @@ void mfa::DecoratedWindow::handle_mouse_button(
     }
 }
 
-void mfa::DecoratedWindow::draw_new_content(Buffer* buffer)
+void mfa::DecoratedXdgToplevelWindow::draw_new_content(Buffer* buffer)
 {
     auto* mir_window{Globals::instance().window_for(static_cast<wl_surface*>(*this))};
     if (!mir_window) return;
@@ -98,6 +102,7 @@ void mfa::DecoratedWindow::draw_new_content(Buffer* buffer)
     auto const width{buffer->width - (x * 2)};
     auto const height{buffer->height - (y * 2)};
 
+    auto const close_button_scale{0.25};
     auto const pi{std::numbers::pi};
     auto const pi_2{pi / 2.0};
 
@@ -210,13 +215,13 @@ void mfa::DecoratedWindow::draw_new_content(Buffer* buffer)
     }
 }
 
-void mfa::DecoratedWindow::show_activated()
+void mfa::DecoratedXdgToplevelWindow::show_activated()
 {
     current_intensity_offset = intensity_offset;
     redraw();
 }
 
-void mfa::DecoratedWindow::show_unactivated()
+void mfa::DecoratedXdgToplevelWindow::show_unactivated()
 {
     current_intensity_offset = 0;
     redraw();

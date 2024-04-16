@@ -1,24 +1,29 @@
 #include "globals.h"
-#include "dialog_window.h"
-#include "floating_regular_window.h"
-#include "mir-shell.h"
-#include "mir_window.h"
+#include "xdg_toplevel_window.h"
+#include "xdg_popup_window.h"
 #include "regular_window.h"
+#include "floating_regular_window.h"
+#include "dialog_window.h"
 #include "satellite_window.h"
+#include "popup_window.h"
+#include "tip_window.h"
+#include "mir_window.h"
 #include "xdg-shell.h"
+#include "mir-shell.h"
 
-#include <gdk/gdkwayland.h>
-
+#include <iomanip>
+#include <iostream>
 #include <vector>
 
 namespace mfa = mir_flutter_app;
 
-void mfa::Globals::bind_interfaces(GdkDisplay* gdk_display)
+void mfa::Globals::bind_interfaces(wl_display* wl_display)
 {
-    if (display_)
+    if (display_ || !wl_display)
     {
         return;
     }
+    display_ = wl_display;
 
     static wl_registry_listener const registry_listener{
         .global = [](void* ctx, auto... args) { static_cast<Globals*>(ctx)->handle_wl_registry_global(args...); },
@@ -32,56 +37,57 @@ void mfa::Globals::bind_interfaces(GdkDisplay* gdk_display)
         .leave = [](void* ctx, auto... args) { static_cast<Globals*>(ctx)->handle_mouse_leave(args...); },
         .motion = [](void* ctx, auto... args) { static_cast<Globals*>(ctx)->handle_mouse_motion(args...); },
         .button = [](void* ctx, auto... args) { static_cast<Globals*>(ctx)->handle_mouse_button(args...); },
-        .axis = [](void* ctx, auto... args) { static_cast<Globals*>(ctx)->handle_mouse_axis(args...); }};
+        .axis = [](auto...) {}};
 
     static wl_keyboard_listener const keyboard_listener{
-        .keymap = [](void* self, auto... args) { static_cast<Globals*>(self)->handle_keyboard_keymap(args...); },
+        .keymap = [](auto...) {},
         .enter = [](void* self, auto... args) { static_cast<Globals*>(self)->handle_keyboard_enter(args...); },
         .leave = [](void* self, auto... args) { static_cast<Globals*>(self)->handle_keyboard_leave(args...); },
         .key = [](void* self, auto... args) { static_cast<Globals*>(self)->handle_keyboard_key(args...); },
         .modifiers = [](void* self, auto... args) { static_cast<Globals*>(self)->handle_keyboard_modifiers(args...); },
-        .repeat_info = [](void* self, auto... args)
-        { static_cast<Globals*>(self)->handle_keyboard_repeat_info(args...); }};
+        .repeat_info = [](auto...) {}};
 
-    g_return_if_fail(gdk_display);
-    g_return_if_fail(GDK_IS_WAYLAND_DISPLAY(gdk_display) == true);
-
-    compositor_ = gdk_wayland_display_get_wl_compositor(gdk_display);
-    if (!compositor())
-    {
-        g_critical("Cannot bind to wl_compositor");
-    }
-
-    display_ = gdk_wayland_display_get_wl_display(gdk_display);
-    if (!display())
-    {
-        g_critical("Cannot bind to wl_display");
-    }
 
     wl_registry* const registry{wl_display_get_registry(display())};
-    g_return_if_fail(registry);
+    if (!registry)
+    {
+        std::cerr << "Failed to retrieve registry from the Wayland display connection.\n";
+        std::abort();
+    }
+
     wl_registry_add_listener(registry, &registry_listener, this);
     wl_display_roundtrip(display());
 
+    bool failed_binding{};
     if (!output_)
     {
-        g_critical("Cannot bind to wl_output");
+        std::cerr << "Failed to bind to wl_output.\n";
+        failed_binding = true;
     }
     if (!seat_)
     {
-        g_critical("Cannot bind to wl_seat");
+        std::cerr << "Failed to bind to wl_seat.\n";
+        failed_binding = true;
     }
     if (!shm_)
     {
-        g_critical("Cannot bind to wl_shm");
+        std::cerr << "Failed to bind to wl_shm.\n";
+        failed_binding = true;
     }
     if (!wm_base_)
     {
-        g_critical("Cannot bind to wm_base");
+        std::cerr << "Failed to bind to wm_base.\n";
+        failed_binding = true;
     }
     if (!mir_shell_)
     {
-        g_critical("Cannot bind to mir_shell");
+        std::cerr << "Failed to bind to mir_shell.\n";
+        failed_binding = true;
+    }
+
+    if (failed_binding)
+    {
+        std::abort();
     }
 
     xdg_wm_base_add_listener(wm_base(), &shell_listener, nullptr);
@@ -89,28 +95,33 @@ void mfa::Globals::bind_interfaces(GdkDisplay* gdk_display)
 
     pointer = wl_seat_get_pointer(seat_);
     keyboard = wl_seat_get_keyboard(seat_);
-
     wl_keyboard_add_listener(keyboard, &keyboard_listener, this);
     wl_pointer_add_listener(pointer, &pointer_listener, this);
 }
 
-auto mfa::Globals::make_regular_window(MirWindow* window) -> std::unique_ptr<ToplevelWindow>
+auto mfa::Globals::make_regular_window(MirWindow* window) -> std::unique_ptr<XdgToplevelWindow>
 {
     register_window(window);
 
     return std::make_unique<RegularWindow>(window->surface, window->size.width, window->size.height);
 }
 
-auto mfa::Globals::make_floating_regular_window(MirWindow* window) -> std::unique_ptr<ToplevelWindow>
+auto mfa::Globals::make_floating_regular_window(MirWindow* window) -> std::unique_ptr<XdgToplevelWindow>
 {
     register_window(window);
 
     return std::make_unique<FloatingRegularWindow>(window->surface, window->size.width, window->size.height);
 }
 
-auto mfa::Globals::make_satellite_window(MirWindow* window) -> std::unique_ptr<ToplevelWindow>
+auto mfa::Globals::make_satellite_window(MirWindow* window) -> std::unique_ptr<XdgToplevelWindow>
 {
     register_window(window);
+
+    if (!window->parent)
+    {
+        std::cerr << "Satellite window must have a parent.\n";
+        std::abort();
+    }
 
     auto* const positioner{mir_shell_v1_create_positioner(mir_shell_)};
     mir_positioner_v1_set_anchor_rect(
@@ -124,12 +135,8 @@ auto mfa::Globals::make_satellite_window(MirWindow* window) -> std::unique_ptr<T
     mir_positioner_v1_set_offset(positioner, window->positioner.offset.dx, window->positioner.offset.dy);
     mir_positioner_v1_set_constraint_adjustment(positioner, window->positioner.constraint_adjustment);
 
-    if (!window->parent)
-    {
-        g_critical("Satellite window must have a parent");
-    }
-
-    auto* const parent{static_cast<xdg_toplevel*>(*window->parent->toplevel)};
+    auto* const parent{static_cast<xdg_toplevel*>(
+        *std::get<std::unique_ptr<mfa::XdgToplevelWindow>>(window->parent->window))};
     return std::make_unique<SatelliteWindow>(
         window->surface,
         window->size.width,
@@ -138,11 +145,84 @@ auto mfa::Globals::make_satellite_window(MirWindow* window) -> std::unique_ptr<T
         parent);
 }
 
-auto mfa::Globals::make_dialog_window(MirWindow* window) -> std::unique_ptr<ToplevelWindow>
+auto mfa::Globals::make_popup_window(MirWindow* window) -> std::unique_ptr<XdgPopupWindow>
 {
     register_window(window);
 
-    auto* const parent{window->parent ? static_cast<xdg_toplevel*>(*window->parent->toplevel) : nullptr};
+    if (!window->parent)
+    {
+        std::cerr << "Poup window must have a parent.\n";
+        std::abort();
+    }
+
+    auto* const parent{std::holds_alternative<std::unique_ptr<mfa::XdgToplevelWindow>>(window->parent->window) ?
+        static_cast<xdg_surface*>(*std::get<std::unique_ptr<mfa::XdgToplevelWindow>>(window->parent->window)) :
+        static_cast<xdg_surface*>(*std::get<std::unique_ptr<mfa::XdgPopupWindow>>(window->parent->window))};
+
+    auto* const positioner{xdg_wm_base_create_positioner(wm_base_)};
+    xdg_positioner_set_size(positioner, window->size.width, window->size.height);
+    xdg_positioner_set_anchor_rect(
+        positioner,
+        window->positioner.anchor_rect.x,
+        window->positioner.anchor_rect.y,
+        window->positioner.anchor_rect.width,
+        window->positioner.anchor_rect.height);
+    xdg_positioner_set_anchor(positioner, window->positioner.anchor);
+    xdg_positioner_set_gravity(positioner, window->positioner.gravity);
+    xdg_positioner_set_constraint_adjustment(positioner, window->positioner.constraint_adjustment);
+    xdg_positioner_set_offset(positioner, window->positioner.offset.dx, window->positioner.offset.dy);
+
+    return std::make_unique<PopupWindow>(
+        window->surface,
+        window->size.width,
+        window->size.height,
+        positioner,
+        parent);
+}
+
+auto mfa::Globals::make_tip_window(MirWindow* window) -> std::unique_ptr<XdgPopupWindow>
+{
+    register_window(window);
+
+    if (!window->parent)
+    {
+        std::cerr << "Tip window must have a parent.\n";
+        std::abort();
+    }
+
+    auto* const parent{std::holds_alternative<std::unique_ptr<mfa::XdgToplevelWindow>>(window->parent->window) ?
+        static_cast<xdg_surface*>(*std::get<std::unique_ptr<mfa::XdgToplevelWindow>>(window->parent->window)) :
+        static_cast<xdg_surface*>(*std::get<std::unique_ptr<mfa::XdgPopupWindow>>(window->parent->window))};
+
+    auto* const positioner{xdg_wm_base_create_positioner(wm_base_)};
+    xdg_positioner_set_size(positioner, window->size.width, window->size.height);
+    xdg_positioner_set_anchor_rect(
+        positioner,
+        window->positioner.anchor_rect.x,
+        window->positioner.anchor_rect.y,
+        window->positioner.anchor_rect.width,
+        window->positioner.anchor_rect.height);
+    xdg_positioner_set_anchor(positioner, window->positioner.anchor);
+    xdg_positioner_set_gravity(positioner, window->positioner.gravity);
+    xdg_positioner_set_constraint_adjustment(positioner, window->positioner.constraint_adjustment);
+    xdg_positioner_set_offset(positioner, window->positioner.offset.dx, window->positioner.offset.dy);
+
+    return std::make_unique<TipWindow>(
+        window->surface,
+        window->size.width,
+        window->size.height,
+        positioner,
+        parent);
+}
+
+auto mfa::Globals::make_dialog_window(MirWindow* window) -> std::unique_ptr<XdgToplevelWindow>
+{
+    register_window(window);
+
+    auto* const parent{window->parent ?
+        static_cast<xdg_toplevel*>(*std::get<std::unique_ptr<mfa::XdgToplevelWindow>>(window->parent->window))  :
+        nullptr};
+
     return std::make_unique<DialogWindow>(window->surface, window->size.width, window->size.height, parent);
 }
 
@@ -185,44 +265,53 @@ void mfa::Globals::handle_wl_registry_global(
     char const* interface,
     uint32_t version)
 {
-    if (std::string_view{interface} == wl_output_interface.name)
+    uint32_t version_;
+    std::string_view interface_name;
+
+    if (std::string_view{interface} == wl_compositor_interface.name && wl_compositor_interface.version >= 1)
     {
-        g_warn_if_fail(wl_output_interface.version >= 1);
-        auto const version_{std::min(version, 2u)};
-        output_ = static_cast<wl_output*>(wl_registry_bind(registry, id, &wl_output_interface, version_));
-        g_print("Bound to %s (v%d)\n", wl_output_interface.name, version_);
+        version_ = std::min(version, 4u);
+        interface_name = wl_compositor_interface.name;
+        compositor_ = static_cast<wl_compositor*>(wl_registry_bind(registry, id, &wl_compositor_interface, version_));
     }
-    else if (std::string_view{interface} == wl_shm_interface.name)
+    else if (std::string_view{interface} == wl_output_interface.name && wl_output_interface.version >= 1)
     {
-        g_warn_if_fail(wl_shm_interface.version >= 1);
-        auto const version_{std::min(version, 1u)};
+        version_ = std::min(version, 4u);
+        interface_name = wl_output_interface.name;
+        output_ = static_cast<wl_output*>(wl_registry_bind(registry, id, &wl_output_interface, version_));
+    }
+    else if (std::string_view{interface} == wl_shm_interface.name && wl_shm_interface.version >= 1)
+    {
+        version_ = std::min(version, 1u);
+        interface_name = wl_shm_interface.name;
         shm_ = static_cast<wl_shm*>(wl_registry_bind(registry, id, &wl_shm_interface, version_));
         // Normally we'd add a listener to pick up the supported formats here
         // As luck would have it, I know that argb8888 is the only format we support :)
-        g_print("Bound to %s (v%d)\n", wl_shm_interface.name, version_);
     }
-    else if (std::string_view{interface} == wl_seat_interface.name)
+    else if (std::string_view{interface} == wl_seat_interface.name && wl_seat_interface.version >= 1)
     {
-        g_warn_if_fail(wl_seat_interface.version >= 1);
-        auto const version_{std::min(version, 4u)};
+        version_ = std::min(version, 4u);
+        interface_name = wl_seat_interface.name;
         seat_ = static_cast<wl_seat*>(wl_registry_bind(registry, id, &wl_seat_interface, version_));
-        g_print("Bound to %s (v%d)\n", wl_seat_interface.name, version_);
     }
-    else if (std::string_view{interface} == mir_shell_v1_interface.name)
+    else if (std::string_view{interface} == mir_shell_v1_interface.name && mir_shell_v1_interface.version >= 1)
     {
-        g_warn_if_fail(mir_shell_v1_interface.version >= 1);
-        auto const version_{std::min(version, 1u)};
+        version_ = std::min(version, 1u);
+        interface_name = mir_shell_v1_interface.name;
         mir_shell_ =
             static_cast<mir_shell_v1*>(wl_registry_bind(registry, id, &mir_shell_v1_interface, std::min(version, 1u)));
-        g_print("Bound to %s (v%d)\n", mir_shell_v1_interface.name, version_);
     }
-    else if (std::string_view{interface} == xdg_wm_base_interface.name)
+    else if (std::string_view{interface} == xdg_wm_base_interface.name && xdg_wm_base_interface.version >= 1)
     {
-        g_warn_if_fail(xdg_wm_base_interface.version >= 1);
-        auto const version_{std::min(version, 1u)};
+        version_ = std::min(version, 1u);
+        interface_name = xdg_wm_base_interface.name;
         wm_base_ =
             static_cast<xdg_wm_base*>(wl_registry_bind(registry, id, &xdg_wm_base_interface, std::min(version, 1u)));
-        g_print("Bound to %s (v%d)\n", xdg_wm_base_interface.name, version_);
+    }
+
+    if (!interface_name.empty())
+    {
+        std::cout << "Bound to " << interface_name << " (v" << version_ << ")\n";
     }
 }
 
@@ -235,16 +324,33 @@ void mfa::Globals::handle_mouse_enter(
 {
     mouse_focus = window_for(surface);
 
-    g_print(
-        "mouse_enter %p: (%.2f, %.2f)\n",
-        mouse_focus,
-        wl_fixed_to_double(surface_x),
-        wl_fixed_to_double(surface_y));
+    // if (mouse_focus)
+    // {
+    //     std::cout << "Window " << mouse_focus->id;
+    // }
+    // else
+    // {
+    //     std::cout << "Main window";
+    // }
+    // std::cout << " - ";
+
+    // std::cout << "mouse_enter: (" << std::fixed << std::setprecision(2)
+    //     << wl_fixed_to_double(surface_x) << ", " << wl_fixed_to_double(surface_y) << ")\n";
 }
 
 void mfa::Globals::handle_mouse_leave(wl_pointer* /*pointer*/, uint32_t /*serial*/, wl_surface* surface)
 {
-    g_print("mouse_leave %p\n", mouse_focus);
+    // if (mouse_focus)
+    // {
+    //     std::cout << "Window " << mouse_focus->id;
+    // }
+    // else
+    // {
+    //     std::cout << "Main window";
+    // }
+    // std::cout << " - ";
+
+    // std::cout << "mouse_leave\n";
 
     if (mouse_focus == window_for(surface))
     {
@@ -258,7 +364,20 @@ void mfa::Globals::handle_mouse_motion(
     wl_fixed_t surface_x,
     wl_fixed_t surface_y)
 {
-    // g_print("mouse_motion: (%.2f, %.2f) @ %i\n", wl_fixed_to_double(surface_x), wl_fixed_to_double(surface_y), time);
+    // if (mouse_focus)
+    // {
+    //     std::cout << "Window " << mouse_focus->id;
+    // }
+    // else
+    // {
+    //     std::cout << "Main window";
+    // }
+    // std::cout << " - ";
+
+    // std::cout << "mouse_motion: (" << std::fixed << std::setprecision(2)
+    //     << wl_fixed_to_double(surface_x) << ", " << wl_fixed_to_double(surface_y)
+    //     << ") @ " << time << "\n";
+
     pointer_position_ = {wl_fixed_to_double(surface_x), wl_fixed_to_double(surface_y)};
 }
 
@@ -269,44 +388,69 @@ void mfa::Globals::handle_mouse_button(
     uint32_t button,
     uint32_t state)
 {
-    g_print("mouse_button: button %i, state %i @ %i\n", button, state, time);
+    // if (mouse_focus)
+    // {
+    //     std::cout << "Window " << mouse_focus->id;
+    // }
+    // else
+    // {
+    //     std::cout << "Main window";
+    // }
+    // std::cout << " - ";
+
+    // std::cout << "mouse_button: button " << button << ", state " << state
+    //     << " @ " << time << "\n";
 
     if (is_registered(mouse_focus))
     {
-        mouse_focus->toplevel->handle_mouse_button(pointer, serial, time, button, state);
+        if (std::holds_alternative<std::unique_ptr<mfa::XdgToplevelWindow>>(mouse_focus->window))
+        {
+            std::get<std::unique_ptr<mfa::XdgToplevelWindow>>(mouse_focus->window)->
+                handle_mouse_button(pointer, serial, time, button, state);
+        }
+        else
+        {
+            std::get<std::unique_ptr<mfa::XdgPopupWindow>>(mouse_focus->window)->
+                handle_mouse_button(pointer, serial, time, button, state);
+        }
     }
-}
-
-void mfa::Globals::handle_mouse_axis(wl_pointer* /*pointer*/, uint32_t time, uint32_t axis, wl_fixed_t value)
-{
-    g_print("mouse_axis: axis %i, value %f @ %i\n", axis, wl_fixed_to_double(value), time);
-}
-
-void mfa::Globals::handle_keyboard_keymap(wl_keyboard* /*keyboard*/, uint32_t format, int32_t /*fd*/, uint32_t size)
-{
-    g_print("keyboard_keymap: format %i, size %i\n", format, size);
 }
 
 void mfa::Globals::handle_keyboard_enter(wl_keyboard* /*keyboard*/, uint32_t, wl_surface* surface, wl_array*)
 {
     keyboard_focus = window_for(surface);
 
-    g_print("keyboard_enter %p\n", keyboard_focus);
+    // if (keyboard_focus)
+    // {
+    //     std::cout << "Window " << keyboard_focus->id;
+    // }
+    // else
+    // {
+    //     std::cout << "Main window";
+    // }
+    // std::cout << " - ";
+
+    // std::cout << "keyboard_enter\n";
 }
 
 void mfa::Globals::handle_keyboard_leave(wl_keyboard* /*keyboard*/, uint32_t, wl_surface* surface)
 {
-    g_print("keyboard_leave %p\n", keyboard_focus);
+    // if (keyboard_focus)
+    // {
+    //     std::cout << "Window " << keyboard_focus->id;
+    // }
+    // else
+    // {
+    //     std::cout << "Main window";
+    // }
+    // std::cout << " - ";
+
+    // std::cout << "keyboard_leave\n";
 
     if (keyboard_focus == window_for(surface))
     {
         keyboard_focus = nullptr;
     }
-}
-
-void mfa::Globals::handle_keyboard_repeat_info(wl_keyboard* /*keyboard*/, int32_t rate, int32_t delay)
-{
-    g_print("keyboard_modifiers: rate %i, delay %i\n", rate, delay);
 }
 
 void mfa::Globals::handle_keyboard_key(
@@ -316,11 +460,30 @@ void mfa::Globals::handle_keyboard_key(
     uint32_t key,
     uint32_t state)
 {
-    g_print("keyboard_key: key %i, state %i\n", key, state);
+    // if (keyboard_focus)
+    // {
+    //     std::cout << "Window " << keyboard_focus->id;
+    // }
+    // else
+    // {
+    //     std::cout << "Main window";
+    // }
+    // std::cout << " - ";
+
+    // std::cout << "keyboard_key: key " << key << ", state " << state << '\n';
 
     if (is_registered(keyboard_focus))
     {
-        keyboard_focus->toplevel->handle_keyboard_key(keyboard, serial, time, key, state);
+        if (std::holds_alternative<std::unique_ptr<mfa::XdgToplevelWindow>>(keyboard_focus->window))
+        {
+            std::get<std::unique_ptr<mfa::XdgToplevelWindow>>(keyboard_focus->window)->
+                handle_keyboard_key(keyboard, serial, time, key, state);
+        }
+        else
+        {
+            std::get<std::unique_ptr<mfa::XdgPopupWindow>>(keyboard_focus->window)->
+                handle_keyboard_key(keyboard, serial, time, key, state);
+        }
     }
 }
 
@@ -332,16 +495,45 @@ void mfa::Globals::handle_keyboard_modifiers(
     uint32_t mods_locked,
     uint32_t group)
 {
-    g_print(
-        "keyboard_modifiers: depressed %i, latched %i, locked %i, group %i\n",
-        mods_depressed,
-        mods_latched,
-        mods_locked,
-        group);
+    // if (keyboard_focus)
+    // {
+    //     std::cout << "Window " << keyboard_focus->id;
+    // }
+    // else
+    // {
+    //     std::cout << "Main window";
+    // }
+    // std::cout << " - ";
+
+    // std::cout << "keyboard_modifiers: depressed " << mods_depressed
+    //     << ", latched " << mods_latched
+    //     << ", locked " << mods_locked
+    //     << ", group " << group
+    //     << "\n";
 
     if (is_registered(keyboard_focus))
     {
-        keyboard_focus->toplevel
-            ->handle_keyboard_modifiers(keyboard, serial, mods_depressed, mods_latched, mods_locked, group);
+        if (std::holds_alternative<std::unique_ptr<mfa::XdgToplevelWindow>>(keyboard_focus->window))
+        {
+            std::get<std::unique_ptr<mfa::XdgToplevelWindow>>(keyboard_focus->window)->
+                handle_keyboard_modifiers(
+                keyboard,
+                serial,
+                mods_depressed,
+                mods_latched,
+                mods_locked,
+                group);
+        }
+        else
+        {
+            std::get<std::unique_ptr<mfa::XdgPopupWindow>>(keyboard_focus->window)->
+                handle_keyboard_modifiers(
+                keyboard,
+                serial,
+                mods_depressed,
+                mods_latched,
+                mods_locked,
+                group);
+        }
     }
 }

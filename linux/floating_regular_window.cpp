@@ -8,7 +8,7 @@
 namespace mfa = mir_flutter_app;
 
 mfa::FloatingRegularWindow::FloatingRegularWindow(wl_surface* surface, int32_t width, int32_t height) :
-    DecoratedWindow{surface, width, height, {.title_bar_text = "floating_regular"}},
+    DecoratedXdgToplevelWindow{surface, width, height, {.title_bar_text = "floating_regular"}},
     mir_floating_regular_surface{
         Globals::instance().mir_shell() ?
         mir_shell_v1_get_floating_regular_surface(Globals::instance().mir_shell(), surface) :
@@ -32,7 +32,7 @@ void mfa::FloatingRegularWindow::handle_keyboard_key(
     uint32_t key,
     uint32_t state)
 {
-    DecoratedWindow::handle_keyboard_key(keyboard, serial, time, key, state);
+    DecoratedXdgToplevelWindow::handle_keyboard_key(keyboard, serial, time, key, state);
 
     if (state == WL_KEYBOARD_KEY_STATE_RELEASED)
     {

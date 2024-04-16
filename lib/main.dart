@@ -37,7 +37,9 @@ class _MyHomePageState extends State<MyHomePage> {
     'floatingRegularSize': const Size(300, 300),
     'dialogSize': const Size(200, 200),
     'satelliteSize': const Size(150, 300),
-    'anchorRect': const Rect.fromLTWH(0, 0, 400, 400),
+    'popupSize': const Size(160, 160),
+    'tipSize': const Size(140, 140),
+    'anchorRect': const Rect.fromLTWH(0, 0, 1000, 1000),
   };
 
   int positionerIndex = 0;
@@ -139,11 +141,11 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Column(
         children: [
           Expanded(
-            flex: 8,
+            flex: 4,
             child: Container(),
           ),
           Expanded(
-            flex: 82,
+            flex: 92,
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 50.0),
               children: [
@@ -267,7 +269,6 @@ class _MyHomePageState extends State<MyHomePage> {
                     Expanded(
                       flex: 30,
                       child: Column(
-                        // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Card.outlined(
@@ -307,7 +308,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                         },
                                         child: const Text('Regular'),
                                       ),
-                                      const SizedBox(height: 16),
+                                      const SizedBox(height: 8),
                                       OutlinedButton(
                                         onPressed: () async {
                                           final windowId =
@@ -323,68 +324,43 @@ class _MyHomePageState extends State<MyHomePage> {
                                         },
                                         child: const Text('Floating Regular'),
                                       ),
-                                      const SizedBox(height: 16),
+                                      const SizedBox(height: 8),
                                       OutlinedButton(
                                         onPressed: () async {
                                           final windowId =
                                               await createDialogWindow(
                                                   windowSettings['dialogSize'],
-                                                  selectedRowIndex >= 0
+                                                  selectedRowIndex >= 0 &&
+                                                          isMirShellWindow(
+                                                              selectedRowIndex)
                                                       ? windows[
                                                               selectedRowIndex]
                                                           ['id']
                                                       : null);
                                           await setWindowId(windowId);
                                         },
-                                        child: Text(selectedRowIndex >= 0
+                                        child: Text(selectedRowIndex >= 0 &&
+                                                isMirShellWindow(
+                                                    selectedRowIndex)
                                             ? 'Dialog of ID ${windows[selectedRowIndex]['id']}'
                                             : 'Dialog'),
                                       ),
-                                      const SizedBox(height: 16),
+                                      const SizedBox(height: 8),
                                       OutlinedButton(
-                                        onPressed: selectedRowIndex >= 0
+                                        onPressed: selectedRowIndex >= 0 &&
+                                                isMirShellWindow(
+                                                    selectedRowIndex)
                                             ? () async {
-                                                final parentSize =
-                                                    await getWindowSize(windows[
-                                                            selectedRowIndex]
-                                                        ['id']);
-                                                final Rect clampedAnchorRect =
-                                                    Rect.fromLTWH(
-                                                        windowSettings[
-                                                                'anchorRect']
-                                                            .left
-                                                            .clamp(
-                                                                0,
-                                                                parentSize
-                                                                    .width),
-                                                        windowSettings[
-                                                                'anchorRect']
-                                                            .top
-                                                            .clamp(
-                                                                0,
-                                                                parentSize
-                                                                    .height),
-                                                        windowSettings[
-                                                                'anchorRect']
-                                                            .width
-                                                            .clamp(
-                                                                0,
-                                                                parentSize
-                                                                    .width),
-                                                        windowSettings[
-                                                                'anchorRect']
-                                                            .height
-                                                            .clamp(
-                                                                0,
-                                                                parentSize
-                                                                    .height));
                                                 final windowId =
                                                     await createSatelliteWindow(
                                                   windows[selectedRowIndex]
                                                       ['id'],
                                                   windowSettings[
                                                       'satelliteSize'],
-                                                  clampedAnchorRect,
+                                                  anchorRectClampedToSize(
+                                                      await getWindowSize(windows[
+                                                              selectedRowIndex]
+                                                          ['id'])),
                                                   FlutterViewPositioner(
                                                     parentAnchor:
                                                         positionerSettings[
@@ -423,6 +399,110 @@ class _MyHomePageState extends State<MyHomePage> {
                                         child: Text(selectedRowIndex >= 0
                                             ? 'Satellite of ID ${windows[selectedRowIndex]['id']}'
                                             : 'Satellite'),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      OutlinedButton(
+                                        onPressed: selectedRowIndex >= 0
+                                            ? () async {
+                                                final windowId =
+                                                    await createPopupWindow(
+                                                  windows[selectedRowIndex]
+                                                      ['id'],
+                                                  windowSettings['popupSize'],
+                                                  anchorRectClampedToSize(
+                                                      await getWindowSize(windows[
+                                                              selectedRowIndex]
+                                                          ['id'])),
+                                                  FlutterViewPositioner(
+                                                    parentAnchor:
+                                                        positionerSettings[
+                                                                positionerIndex]
+                                                            ['parentAnchor'],
+                                                    childAnchor:
+                                                        positionerSettings[
+                                                                positionerIndex]
+                                                            ['childAnchor'],
+                                                    offset: positionerSettings[
+                                                            positionerIndex]
+                                                        ['offset'],
+                                                    constraintAdjustment:
+                                                        positionerSettings[
+                                                                positionerIndex]
+                                                            [
+                                                            'constraintAdjustments'],
+                                                  ),
+                                                );
+                                                await setWindowId(windowId);
+                                                setState(() {
+                                                  // Cycle through presets when the last one (Custom preset) is not selected
+                                                  if (positionerIndex !=
+                                                      positionerSettings
+                                                              .length -
+                                                          1) {
+                                                    positionerIndex =
+                                                        (positionerIndex + 1) %
+                                                            (positionerSettings
+                                                                    .length -
+                                                                1);
+                                                  }
+                                                });
+                                              }
+                                            : null,
+                                        child: Text(selectedRowIndex >= 0
+                                            ? 'Popup of ID ${windows[selectedRowIndex]['id']}'
+                                            : 'Popup'),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      OutlinedButton(
+                                        onPressed: selectedRowIndex >= 0
+                                            ? () async {
+                                                final windowId =
+                                                    await createTipWindow(
+                                                  windows[selectedRowIndex]
+                                                      ['id'],
+                                                  windowSettings['tipSize'],
+                                                  anchorRectClampedToSize(
+                                                      await getWindowSize(windows[
+                                                              selectedRowIndex]
+                                                          ['id'])),
+                                                  FlutterViewPositioner(
+                                                    parentAnchor:
+                                                        positionerSettings[
+                                                                positionerIndex]
+                                                            ['parentAnchor'],
+                                                    childAnchor:
+                                                        positionerSettings[
+                                                                positionerIndex]
+                                                            ['childAnchor'],
+                                                    offset: positionerSettings[
+                                                            positionerIndex]
+                                                        ['offset'],
+                                                    constraintAdjustment:
+                                                        positionerSettings[
+                                                                positionerIndex]
+                                                            [
+                                                            'constraintAdjustments'],
+                                                  ),
+                                                );
+                                                await setWindowId(windowId);
+                                                setState(() {
+                                                  // Cycle through presets when the last one (Custom preset) is not selected
+                                                  if (positionerIndex !=
+                                                      positionerSettings
+                                                              .length -
+                                                          1) {
+                                                    positionerIndex =
+                                                        (positionerIndex + 1) %
+                                                            (positionerSettings
+                                                                    .length -
+                                                                1);
+                                                  }
+                                                });
+                                              }
+                                            : null,
+                                        child: Text(selectedRowIndex >= 0
+                                            ? 'Tip of ID ${windows[selectedRowIndex]['id']}'
+                                            : 'Tip'),
                                       ),
                                       const SizedBox(height: 14),
                                       Container(
@@ -551,7 +631,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
           Expanded(
-            flex: 10,
+            flex: 4,
             child: Container(),
           ),
         ],
@@ -568,6 +648,13 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<int> createFloatingRegularWindow(Size size) async {
     final id = await windowChannel
         .invokeMethod('createFloatingRegularWindow', [size.width, size.height]);
+    return id;
+  }
+
+  Future<int> createDialogWindow(Size size, int? parent) async {
+    final int parentId = parent ?? -1;
+    final int id = await windowChannel.invokeMethod(
+        'createDialogWindow', [size.width, size.height, parentId]);
     return id;
   }
 
@@ -594,10 +681,49 @@ class _MyHomePageState extends State<MyHomePage> {
     return id;
   }
 
-  Future<int> createDialogWindow(Size size, int? parent) async {
-    final int parentId = parent ?? -1;
-    final int id = await windowChannel.invokeMethod(
-        'createDialogWindow', [size.width, size.height, parentId]);
+  Future<int> createPopupWindow(int parent, Size size, Rect anchorRect,
+      FlutterViewPositioner positioner) async {
+    int constraintAdjustmentBitmask = 0;
+    for (var adjustment in positioner.constraintAdjustment) {
+      constraintAdjustmentBitmask |= 1 << adjustment.index;
+    }
+    final id = await windowChannel.invokeMethod('createPopupWindow', [
+      parent,
+      size.width,
+      size.height,
+      anchorRect.left,
+      anchorRect.top,
+      anchorRect.width,
+      anchorRect.height,
+      positioner.parentAnchor.index,
+      positioner.childAnchor.index,
+      positioner.offset.dx,
+      positioner.offset.dy,
+      constraintAdjustmentBitmask
+    ]);
+    return id;
+  }
+
+  Future<int> createTipWindow(int parent, Size size, Rect anchorRect,
+      FlutterViewPositioner positioner) async {
+    int constraintAdjustmentBitmask = 0;
+    for (var adjustment in positioner.constraintAdjustment) {
+      constraintAdjustmentBitmask |= 1 << adjustment.index;
+    }
+    final id = await windowChannel.invokeMethod('createTipWindow', [
+      parent,
+      size.width,
+      size.height,
+      anchorRect.left,
+      anchorRect.top,
+      anchorRect.width,
+      anchorRect.height,
+      positioner.parentAnchor.index,
+      positioner.childAnchor.index,
+      positioner.offset.dx,
+      positioner.offset.dy,
+      constraintAdjustmentBitmask
+    ]);
     return id;
   }
 
@@ -629,7 +755,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _methodCallHandler(MethodCall call) async {
     switch (call.method) {
-      case 'resetWindowId':
+      case 'onWindowClosed':
         resetWindowId(call.arguments);
         break;
     }
@@ -645,5 +771,24 @@ class _MyHomePageState extends State<MyHomePage> {
     final sizeMap =
         await windowChannel.invokeMapMethod('getWindowSize', [windowId]);
     return Size(sizeMap!['width'], sizeMap['height']);
+  }
+
+  Rect anchorRectClampedToSize(Size size) {
+    double left = windowSettings['anchorRect'].left.clamp(0, size.width);
+    double top = windowSettings['anchorRect'].top.clamp(0, size.height);
+    double right = windowSettings['anchorRect'].right.clamp(0, size.width);
+    double bottom = windowSettings['anchorRect'].bottom.clamp(0, size.height);
+    return Rect.fromLTRB(left, top, right, bottom);
+  }
+
+  bool isMirShellWindow(int index) {
+    final windowType = windows[index]['type'];
+    final compatibleTypes = [
+      'regular',
+      'floating_regular',
+      'dialog',
+      'satellite'
+    ];
+    return compatibleTypes.contains(windowType);
   }
 }

@@ -8,7 +8,7 @@
 namespace mfa = mir_flutter_app;
 
 mfa::DialogWindow::DialogWindow(wl_surface* surface, int32_t width, int32_t height, xdg_toplevel* parent) :
-    DecoratedWindow{surface, width, height, {.background_intensity = 0.95, .title_bar_text = "dialog"}},
+    DecoratedXdgToplevelWindow{surface, width, height, {.background_intensity = 0.95, .title_bar_text = "dialog"}},
     mir_dialog_surface{
         Globals::instance().mir_shell() ?
         mir_shell_v1_get_dialog_surface(Globals::instance().mir_shell(), surface) :
@@ -33,7 +33,7 @@ void mfa::DialogWindow::handle_keyboard_key(
     uint32_t key,
     uint32_t state)
 {
-    DecoratedWindow::handle_keyboard_key(keyboard, serial, time, key, state);
+    DecoratedXdgToplevelWindow::handle_keyboard_key(keyboard, serial, time, key, state);
 
     if (state == WL_KEYBOARD_KEY_STATE_RELEASED)
     {

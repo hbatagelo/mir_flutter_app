@@ -3,8 +3,9 @@
 #include "mir-shell.h"
 #include "xdg-shell.h"
 
-#include <gtk/gtk.h>
 #include <linux/input-event-codes.h>
+
+#include <iostream>
 
 namespace mfa = mir_flutter_app;
 
@@ -14,7 +15,7 @@ mfa::SatelliteWindow::SatelliteWindow(
     int32_t height,
     mir_positioner_v1* positioner,
     xdg_toplevel* parent) :
-    DecoratedWindow{surface, width, height,
+    DecoratedXdgToplevelWindow{surface, width, height,
         {
             .title_bar_text = "satellite",
             .title_bar_corner_radius = 8,
@@ -54,7 +55,7 @@ void mfa::SatelliteWindow::handle_keyboard_key(
     uint32_t key,
     uint32_t state)
 {
-    DecoratedWindow::handle_keyboard_key(keyboard, serial, time, key, state);
+    DecoratedXdgToplevelWindow::handle_keyboard_key(keyboard, serial, time, key, state);
 
     if (state == WL_KEYBOARD_KEY_STATE_RELEASED)
     {
@@ -69,5 +70,5 @@ void mfa::SatelliteWindow::handle_repositioned(
     mir_satellite_surface_v1* /*mir_satellite_surface_v1*/,
     uint32_t /*token*/)
 {
-    g_print("Received repositioned event\n");
+    std::cout << "Received repositioned event\n";
 }

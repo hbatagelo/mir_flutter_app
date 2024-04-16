@@ -1,7 +1,7 @@
 #ifndef SATELLITE_WINDOW_H_
 #define SATELLITE_WINDOW_H_
 
-#include "decorated_window.h"
+#include "decorated_xdg_toplevel_window.h"
 
 struct mir_positioner_v1;
 struct mir_satellite_surface_v1;
@@ -9,7 +9,7 @@ struct xdg_toplevel;
 
 namespace mir_flutter_app
 {
-class SatelliteWindow : public DecoratedWindow
+class SatelliteWindow : public DecoratedXdgToplevelWindow
 {
 public:
     SatelliteWindow(
@@ -24,15 +24,16 @@ protected:
     void handle_keyboard_key(wl_keyboard* keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state)
         override;
 
+    SatelliteWindow(SatelliteWindow&&) = default;
+    SatelliteWindow& operator=(SatelliteWindow&&) = default;
+
 private:
-    mir_satellite_surface_v1* const mir_satellite_surface;
+    mir_satellite_surface_v1* mir_satellite_surface;
 
     void handle_repositioned(mir_satellite_surface_v1* mir_satellite_surface_v1, uint32_t token);
 
     SatelliteWindow(SatelliteWindow const&) = delete;
-    SatelliteWindow(SatelliteWindow&&) = delete;
     SatelliteWindow& operator=(SatelliteWindow const&) = delete;
-    SatelliteWindow& operator=(SatelliteWindow&&) = delete;
 };
 }
 

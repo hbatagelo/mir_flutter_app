@@ -36,8 +36,8 @@ namespace mfa = mir_flutter_app;
 
 mfa::Window::Window(wl_surface* surface, int32_t width, int32_t height) :
     surface{surface},
-    width{width},
-    height{height}
+    width_{width},
+    height_{height}
 {
     for (auto& buffer_ : buffers)
     {
@@ -76,12 +76,11 @@ void mfa::Window::redraw()
     }
 }
 
-void mfa::Window::resize(int32_t width_, int32_t height_)
+void mfa::Window::resize(int32_t width, int32_t height)
 {
-    if (width == width_ && height == height_) return;
-    if (width_ > 0) width = width_;
-    if (height_ > 0) height = height_;
-    if (width_ > 0 || height_ > 0) redraw();
+    if (width_ == width && height_ == height) return;
+    if (width > 0) width_ = width;
+    if (height > 0) height_ = height;
 }
 
 void mfa::Window::handle_frame_callback(wl_callback* callback, uint32_t /*time*/)
@@ -110,22 +109,22 @@ void mfa::Window::prepare_buffer(Buffer& buffer)
     static wl_buffer_listener const buffer_listener{
         .release = [](void* ctx, auto... args) { static_cast<Window*>(ctx)->update_free_buffers(args...); }};
 
-    auto const stride{width * Window::pixel_size};
+    auto const stride{width_ * Window::pixel_size};
 
     void* pool_data;
-    wl_shm_pool* shm_pool{make_shm_pool(Globals::instance().shm(), width * height * Window::pixel_size, &pool_data)};
+    wl_shm_pool* shm_pool{make_shm_pool(Globals::instance().shm(), width_ * height_ * Window::pixel_size, &pool_data)};
 
-    buffer.buffer = wl_shm_pool_create_buffer(shm_pool, 0, width, height, stride, WL_SHM_FORMAT_ARGB8888);
+    buffer.buffer = wl_shm_pool_create_buffer(shm_pool, 0, width_, height_, stride, WL_SHM_FORMAT_ARGB8888);
     buffer.available = true;
-    buffer.width = width;
-    buffer.height = height;
+    buffer.width = width_;
+    buffer.height = height_;
     buffer.content_area = pool_data;
 
     buffer.cairo_surface = cairo_image_surface_create_for_data(
         static_cast<unsigned char*>(pool_data),
         CAIRO_FORMAT_ARGB32,
-        width,
-        height,
+        width_,
+        height_,
         stride);
     buffer.cairo_context = cairo_create(buffer.cairo_surface);
 
@@ -139,7 +138,7 @@ auto mfa::Window::find_free_buffer() -> Buffer*
     {
         if (buffer_.available)
         {
-            if (buffer_.width != width || buffer_.height != height)
+            if (buffer_.width != width_ || buffer_.height != height_)
             {
                 cairo_surface_destroy(buffer_.cairo_surface);
                 cairo_destroy(buffer_.cairo_context);

@@ -92,14 +92,18 @@ add_executable(${BINARY_NAME}
   main.cc
   my_application.cc
   ${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc
-  decorated_window.cpp
-  dialog_window.cpp
-  floating_regular_window.cpp
   globals.cpp
-  regular_window.cpp
-  satellite_window.cpp
-  toplevel_window.cpp
   window.cpp
+  xdg_popup_window.cpp
+  xdg_toplevel_window.cpp
+  decorated_xdg_toplevel_window.cpp
+  decorated_xdg_popup_window.cpp
+  regular_window.cpp
+  floating_regular_window.cpp
+  dialog_window.cpp
+  satellite_window.cpp
+  popup_window.cpp
+  tip_window.cpp
   ${MIR_SHELL_C}
   ${XDG_SHELL_C}
 )

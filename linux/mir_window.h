@@ -7,19 +7,22 @@
 
 #include <memory>
 #include <set>
+#include <variant>
 
 namespace mir_flutter_app
 {
-class SatelliteWindow;
-class ToplevelWindow;
+class XdgToplevelWindow;
+class XdgPopupWindow;
 }
 
 enum class MirWindowArchetype
 {
     regular,
     floating_regular,
-    satellite,
     dialog,
+    satellite,
+    popup,
+    tip
 };
 
 struct MirWindowSize
@@ -67,7 +70,11 @@ struct _MirWindow
     MirWindowSize size;
     MirWindowPositioner positioner;
 
-    std::unique_ptr<mir_flutter_app::ToplevelWindow> toplevel;
+    std::variant
+        <
+            std::unique_ptr<mir_flutter_app::XdgToplevelWindow>,
+            std::unique_ptr<mir_flutter_app::XdgPopupWindow>
+        > window;
 };
 
 #endif // MIR_WINDOW_H_

@@ -22,13 +22,13 @@ struct xdg_wm_base_listener;
 struct mir_positioner_v1;
 struct mir_shell_v1;
 
-using GdkDisplay = struct _GdkDisplay;
 using MirWindow = struct _MirWindow;
 using wl_fixed_t = int32_t;
 
 namespace mir_flutter_app
 {
-class ToplevelWindow;
+class XdgPopupWindow;
+class XdgToplevelWindow;
 
 class Globals
 {
@@ -45,7 +45,7 @@ public:
         return instance;
     }
 
-    void bind_interfaces(GdkDisplay* gdk_display);
+    void bind_interfaces(wl_display* wl_display);
     void init_cairo();
 
     auto compositor() const -> wl_compositor* { return compositor_; }
@@ -56,10 +56,12 @@ public:
     auto wm_base() const -> xdg_wm_base* { return wm_base_; }
     auto mir_shell() const -> mir_shell_v1* { return mir_shell_; }
 
-    auto make_regular_window(MirWindow* window) -> std::unique_ptr<ToplevelWindow>;
-    auto make_floating_regular_window(MirWindow* window) -> std::unique_ptr<ToplevelWindow>;
-    auto make_satellite_window(MirWindow* window) -> std::unique_ptr<ToplevelWindow>;
-    auto make_dialog_window(MirWindow* window) -> std::unique_ptr<ToplevelWindow>;
+    auto make_regular_window(MirWindow* window) -> std::unique_ptr<XdgToplevelWindow>;
+    auto make_floating_regular_window(MirWindow* window) -> std::unique_ptr<XdgToplevelWindow>;
+    auto make_dialog_window(MirWindow* window) -> std::unique_ptr<XdgToplevelWindow>;
+    auto make_satellite_window(MirWindow* window) -> std::unique_ptr<XdgToplevelWindow>;
+    auto make_popup_window(MirWindow* window) -> std::unique_ptr<XdgPopupWindow>;
+    auto make_tip_window(MirWindow* window) -> std::unique_ptr<XdgPopupWindow>;
     void close_window(wl_surface* surface);
 
     auto window_for(wl_surface* surface) -> MirWindow*;
@@ -89,12 +91,9 @@ private:
         wl_fixed_t surface_y);
     void handle_mouse_leave(wl_pointer* pointer, uint32_t serial, wl_surface* surface);
     void handle_mouse_motion(wl_pointer* pointer, uint32_t time, wl_fixed_t surface_x, wl_fixed_t surface_y);
-    void handle_mouse_axis(wl_pointer* pointer, uint32_t time, uint32_t axis, wl_fixed_t value);
 
-    void handle_keyboard_keymap(wl_keyboard* keyboard, uint32_t format, int32_t fd, uint32_t size);
     void handle_keyboard_enter(wl_keyboard* keyboard, uint32_t serial, wl_surface* surface, wl_array* keys);
     void handle_keyboard_leave(wl_keyboard* keyboard, uint32_t serial, wl_surface* surface);
-    void handle_keyboard_repeat_info(wl_keyboard* wl_keyboard, int32_t rate, int32_t delay);
 
     wl_compositor* compositor_{};
     wl_display* display_{};

@@ -1,13 +1,13 @@
 #ifndef REGULAR_WINDOW_H_
 #define REGULAR_WINDOW_H_
 
-#include "decorated_window.h"
+#include "decorated_xdg_toplevel_window.h"
 
 struct mir_regular_surface_v1;
 
 namespace mir_flutter_app
 {
-class RegularWindow : public DecoratedWindow
+class RegularWindow : public DecoratedXdgToplevelWindow
 {
 public:
     RegularWindow(wl_surface* surface, int32_t width, int32_t height);
@@ -26,14 +26,14 @@ protected:
 
     void draw_new_content(Buffer* buffer) override;
 
+    RegularWindow(RegularWindow&&) = default;
+    RegularWindow& operator=(RegularWindow&&) = default;
 private:
-    mir_regular_surface_v1* const mir_regular_surface;
+    mir_regular_surface_v1* mir_regular_surface;
     uint32_t modifiers{};
 
     RegularWindow(RegularWindow const&) = delete;
-    RegularWindow(RegularWindow&&) = delete;
     RegularWindow& operator=(RegularWindow const&) = delete;
-    RegularWindow& operator=(RegularWindow&&) = delete;
 };
 }
 

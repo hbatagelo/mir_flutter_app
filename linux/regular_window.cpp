@@ -10,7 +10,7 @@
 namespace mfa = mir_flutter_app;
 
 mfa::RegularWindow::RegularWindow(wl_surface* surface, int32_t width, int32_t height) :
-    DecoratedWindow{surface, width, height, {.title_bar_text = "regular"}},
+    DecoratedXdgToplevelWindow{surface, width, height, {.title_bar_text = "regular"}},
     mir_regular_surface{
         Globals::instance().mir_shell() ?
         mir_shell_v1_get_regular_surface(Globals::instance().mir_shell(), surface) :
@@ -34,7 +34,7 @@ void mfa::RegularWindow::handle_keyboard_key(
     uint32_t key,
     uint32_t state)
 {
-    DecoratedWindow::handle_keyboard_key(keyboard, serial, time, key, state);
+    DecoratedXdgToplevelWindow::handle_keyboard_key(keyboard, serial, time, key, state);
 
     if (modifiers == ControlMask && state == WL_KEYBOARD_KEY_STATE_RELEASED)
     {
@@ -65,14 +65,14 @@ void mfa::RegularWindow::handle_keyboard_modifiers(
     uint32_t mods_locked,
     uint32_t group)
 {
-    DecoratedWindow::handle_keyboard_modifiers(keyboard, serial, mods_depressed, mods_latched, mods_locked, group);
+    DecoratedXdgToplevelWindow::handle_keyboard_modifiers(keyboard, serial, mods_depressed, mods_latched, mods_locked, group);
 
     modifiers = mods_depressed;
 }
 
 void mfa::RegularWindow::draw_new_content(Buffer* buffer)
 {
-    DecoratedWindow::draw_new_content(buffer);
+    DecoratedXdgToplevelWindow::draw_new_content(buffer);
 
     std::string text{"Hello, Mir Shell!"};
     cairo_set_source_rgb(buffer->cairo_context, 0.2, 0.2, 0.2);

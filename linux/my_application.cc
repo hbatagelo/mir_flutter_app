@@ -8,7 +8,10 @@
 
 #include "mir-shell.h"
 #include "mir_window.h"
-#include "toplevel_window.h"
+#include "xdg_toplevel_window.h"
+#include "xdg_popup_window.h"
+
+#include <iostream>
 
 namespace
 {
@@ -36,7 +39,7 @@ G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
 G_DEFINE_TYPE(MirWindow, mir_window, GTK_TYPE_WINDOW)
 
 template<FlValueType From, typename To>
-To arg_from_to(FlValue* args, size_t index)
+To arg(FlValue* args, size_t index)
 {
     static_assert(From == FL_VALUE_TYPE_FLOAT || From == FL_VALUE_TYPE_INT, "Unsupported Flutter type.");
 
@@ -62,8 +65,6 @@ static void mir_window_realize(GtkWidget* widget)
     GdkWindow* const gdk_window{gtk_widget_get_window(widget)};
     gdk_wayland_window_set_use_custom_surface(gdk_window);
     g_return_if_fail(GDK_IS_WAYLAND_WINDOW(gdk_window) == true);
-
-    mfa::Globals::instance().bind_interfaces(gdk_window_get_display(gdk_window));
 }
 
 static void mir_window_map(GtkWidget* widget)
@@ -74,20 +75,30 @@ static void mir_window_map(GtkWidget* widget)
 
     GdkWindow* const gdk_window{gtk_widget_get_window(widget)};
     self->surface = gdk_wayland_window_get_wl_surface(gdk_window);
-    self->toplevel = [self](MirWindowArchetype archetype)
-        {
-            switch(archetype)
-            {
-            case MirWindowArchetype::regular:
-                return mfa::Globals::instance().make_regular_window(self);
-            case MirWindowArchetype::floating_regular:
-                return mfa::Globals::instance().make_floating_regular_window(self);
-            case MirWindowArchetype::satellite:
-                return mfa::Globals::instance().make_satellite_window(self);
-            case MirWindowArchetype::dialog:
-                return mfa::Globals::instance().make_dialog_window(self);
-            }
-        }(self->archetype);
+    if (self->archetype == MirWindowArchetype::regular)
+    {
+        self->window = mfa::Globals::instance().make_regular_window(self);
+    }
+    if (self->archetype == MirWindowArchetype::floating_regular)
+    {
+        self->window = mfa::Globals::instance().make_floating_regular_window(self);
+    }
+    if (self->archetype == MirWindowArchetype::dialog)
+    {
+        self->window = mfa::Globals::instance().make_dialog_window(self);
+    }
+    if (self->archetype == MirWindowArchetype::satellite)
+    {
+        self->window = mfa::Globals::instance().make_satellite_window(self);
+    }
+    if (self->archetype == MirWindowArchetype::popup)
+    {
+        self->window = mfa::Globals::instance().make_popup_window(self);
+    }
+    if (self->archetype == MirWindowArchetype::tip)
+    {
+        self->window = mfa::Globals::instance().make_tip_window(self);
+    }
 }
 
 static void method_response_cb(GObject* object, GAsyncResult* result, gpointer /*user_data*/)
@@ -123,7 +134,7 @@ static void mir_window_destroy(GtkWidget* widget)
         g_autoptr(FlValue) args{fl_value_new_int(self->id)};
         fl_method_channel_invoke_method(
             application->mir_window_channel,
-            "resetWindowId",
+            "onWindowClosed",
             args,
             nullptr,
             method_response_cb,
@@ -135,7 +146,8 @@ static void mir_window_destroy(GtkWidget* widget)
         }
         else
         {
-            g_critical("Could not find window id in the window map");
+            std::cerr << "Could not find window id in the window map.\n";
+            std::abort();
         }
     }
 
@@ -195,8 +207,8 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
             return new_id;
         }};
 
-    gchar const* const name{fl_method_call_get_name(method_call)};
-    if (strcmp(name, "createRegularWindow") == 0)
+    std::string_view const name{fl_method_call_get_name(method_call)};
+    if (name == "createRegularWindow")
     {
         FlValue* const args{fl_method_call_get_args(method_call)};
         if (fl_value_get_type(args) != FL_VALUE_TYPE_LIST || fl_value_get_length(args) != 2 ||
@@ -208,8 +220,8 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
         }
 
         MirWindowSize const size{
-            .width = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 0),
-            .height = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 1)};
+            .width = arg<FL_VALUE_TYPE_FLOAT, int>(args, 0),
+            .height = arg<FL_VALUE_TYPE_FLOAT, int>(args, 1)};
 
         auto const new_id{get_new_window_id(self->windows)};
         MirWindow* const mir_window{mir_window_new(MirWindowArchetype::regular, size, {}, nullptr, new_id)};
@@ -220,7 +232,7 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
         g_autoptr(FlValue) result{fl_value_new_int(mir_window->id)};
         fl_method_call_respond_success(method_call, result, nullptr);
     }
-    else if (strcmp(name, "createFloatingRegularWindow") == 0)
+    else if (name == "createFloatingRegularWindow")
     {
         FlValue* const args{fl_method_call_get_args(method_call)};
         if (fl_value_get_type(args) != FL_VALUE_TYPE_LIST || fl_value_get_length(args) != 2 ||
@@ -231,8 +243,8 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
             return;
         }
         MirWindowSize const size{
-            .width = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 0),
-            .height = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 1)};
+            .width = arg<FL_VALUE_TYPE_FLOAT, int>(args, 0),
+            .height = arg<FL_VALUE_TYPE_FLOAT, int>(args, 1)};
 
         auto const new_id{get_new_window_id(self->windows)};
         MirWindow* const mir_window{mir_window_new(MirWindowArchetype::floating_regular, size, {}, nullptr, new_id)};
@@ -243,7 +255,9 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
         g_autoptr(FlValue) result{fl_value_new_int(mir_window->id)};
         fl_method_call_respond_success(method_call, result, nullptr);
     }
-    else if (strcmp(name, "createSatelliteWindow") == 0)
+    else if (name == "createSatelliteWindow" ||
+        name == "createPopupWindow" ||
+        name == "createTipWindow")
     {
         FlValue* const args{fl_method_call_get_args(method_call)};
         if (fl_value_get_type(args) != FL_VALUE_TYPE_LIST || fl_value_get_length(args) != 12 ||
@@ -263,10 +277,10 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
             fl_method_call_respond_error(method_call, "Bad Arguments", "", nullptr, nullptr);
             return;
         }
-        auto const parent_id{arg_from_to<FL_VALUE_TYPE_INT, int>(args, 0)};
+        auto const parent_id{arg<FL_VALUE_TYPE_INT, int>(args, 0)};
         MirWindowSize const size{
-            .width = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 1),
-            .height = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 2)};
+            .width = arg<FL_VALUE_TYPE_FLOAT, int>(args, 1),
+            .height = arg<FL_VALUE_TYPE_FLOAT, int>(args, 2)};
 
         // Convert from anchor (originally a FlutterViewPositionerAnchor) to mir_positioner_v1_gravity
         auto const gravity{
@@ -284,20 +298,20 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
                 case MIR_POSITIONER_V1_ANCHOR_TOP_RIGHT: return MIR_POSITIONER_V1_GRAVITY_BOTTOM_LEFT;
                 case MIR_POSITIONER_V1_ANCHOR_BOTTOM_RIGHT: return MIR_POSITIONER_V1_GRAVITY_TOP_LEFT;
                 }
-            }(arg_from_to<FL_VALUE_TYPE_INT, mir_positioner_v1_anchor>(args, 8))};
+            }(arg<FL_VALUE_TYPE_INT, mir_positioner_v1_anchor>(args, 8))};
 
         MirWindowPositioner const positioner{
             .anchor_rect = {
-                .x = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 3),
-                .y = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 4),
-                .width = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 5),
-                .height = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 6)},
-            .anchor = arg_from_to<FL_VALUE_TYPE_INT, mir_positioner_v1_anchor>(args, 7),
+                .x = arg<FL_VALUE_TYPE_FLOAT, int>(args, 3),
+                .y = arg<FL_VALUE_TYPE_FLOAT, int>(args, 4),
+                .width = arg<FL_VALUE_TYPE_FLOAT, int>(args, 5),
+                .height = arg<FL_VALUE_TYPE_FLOAT, int>(args, 6)},
+            .anchor = arg<FL_VALUE_TYPE_INT, mir_positioner_v1_anchor>(args, 7),
             .gravity = gravity,
             .offset = {
-                .dx = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 9),
-                .dy = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 10)},
-            .constraint_adjustment = arg_from_to<FL_VALUE_TYPE_INT, uint32_t>(args, 11)
+                .dx = arg<FL_VALUE_TYPE_FLOAT, int>(args, 9),
+                .dy = arg<FL_VALUE_TYPE_FLOAT, int>(args, 10)},
+            .constraint_adjustment = arg<FL_VALUE_TYPE_INT, uint32_t>(args, 11)
         };
 
         if (!self->windows.contains(parent_id))
@@ -309,8 +323,17 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
         MirWindow* const parent_mir_window{self->windows[parent_id]};
 
         auto const new_id{get_new_window_id(self->windows)};
-        MirWindow* const mir_window{
-            mir_window_new(MirWindowArchetype::satellite, size, positioner, parent_mir_window, new_id)};
+        auto const archetype{[&name]()
+            {
+                if (name == "createSatelliteWindow")
+                    return MirWindowArchetype::satellite;
+                if (name == "createPopupWindow")
+                    return MirWindowArchetype::popup;
+                if (name == "createTipWindow")
+                    return MirWindowArchetype::tip;
+                return MirWindowArchetype::satellite;
+            }()};
+        MirWindow* const mir_window{mir_window_new(archetype, size, positioner, parent_mir_window, new_id)};
         self->windows[mir_window->id] = mir_window;
         gtk_window_set_application(GTK_WINDOW(mir_window), GTK_APPLICATION(self));
         gtk_widget_show(GTK_WIDGET(mir_window));
@@ -318,7 +341,7 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
         g_autoptr(FlValue) result{fl_value_new_int(mir_window->id)};
         fl_method_call_respond_success(method_call, result, nullptr);
     }
-    else if (strcmp(name, "createDialogWindow") == 0)
+    else if (name == "createDialogWindow")
     {
         FlValue* const args{fl_method_call_get_args(method_call)};
         if (fl_value_get_type(args) != FL_VALUE_TYPE_LIST || fl_value_get_length(args) != 3 ||
@@ -330,10 +353,10 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
             return;
         }
         MirWindowSize const size{
-            .width = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 0),
-            .height = arg_from_to<FL_VALUE_TYPE_FLOAT, int>(args, 1)};
+            .width = arg<FL_VALUE_TYPE_FLOAT, int>(args, 0),
+            .height = arg<FL_VALUE_TYPE_FLOAT, int>(args, 1)};
 
-        auto const parent_id{arg_from_to<FL_VALUE_TYPE_INT, int>(args, 2)};
+        auto const parent_id{arg<FL_VALUE_TYPE_INT, int>(args, 2)};
         if (parent_id >= 0 && !self->windows.contains(parent_id))
         {
             fl_method_call_respond_error(method_call, "Bad Arguments", "", nullptr, nullptr);
@@ -350,7 +373,7 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
         g_autoptr(FlValue) result{fl_value_new_int(mir_window->id)};
         fl_method_call_respond_success(method_call, result, nullptr);
     }
-    else if (strcmp(name, "closeWindow") == 0)
+    else if (name == "closeWindow")
     {
         FlValue* const args{fl_method_call_get_args(method_call)};
         if (fl_value_get_type(args) != FL_VALUE_TYPE_LIST || fl_value_get_length(args) != 1 ||
@@ -360,7 +383,7 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
             return;
         }
 
-        auto const window_id{arg_from_to<FL_VALUE_TYPE_INT, int>(args, 0)};
+        auto const window_id{arg<FL_VALUE_TYPE_INT, int>(args, 0)};
         if (!self->windows.contains(window_id))
         {
             fl_method_call_respond_error(method_call, "Bad Arguments", "", nullptr, nullptr);
@@ -370,7 +393,7 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
         MirWindow* const mir_window{self->windows[window_id]};
         mfa::Globals::instance().close_window(mir_window->surface);
     }
-    else if (strcmp(name, "getWindowType") == 0)
+    else if (name == "getWindowType")
     {
         FlValue* const args{fl_method_call_get_args(method_call)};
         if (fl_value_get_type(args) != FL_VALUE_TYPE_LIST || fl_value_get_length(args) != 1 ||
@@ -380,7 +403,7 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
             return;
         }
 
-        auto window_id{arg_from_to<FL_VALUE_TYPE_INT, int>(args, 0)};
+        auto window_id{arg<FL_VALUE_TYPE_INT, int>(args, 0)};
         if (!self->windows.contains(window_id))
         {
             fl_method_call_respond_error(method_call, "Bad Arguments", "", nullptr, nullptr);
@@ -395,13 +418,15 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
                 {
                     case MirWindowArchetype::regular:          return fl_value_new_string("regular");
                     case MirWindowArchetype::floating_regular: return fl_value_new_string("floating_regular");
-                    case MirWindowArchetype::satellite:        return fl_value_new_string("satellite");
                     case MirWindowArchetype::dialog:           return fl_value_new_string("dialog");
+                    case MirWindowArchetype::satellite:        return fl_value_new_string("satellite");
+                    case MirWindowArchetype::popup:            return fl_value_new_string("popup");
+                    case MirWindowArchetype::tip:              return fl_value_new_string("tip");
                 }
             }(mir_window->archetype)};
         fl_method_call_respond_success(method_call, result, nullptr);
     }
-    else if (strcmp(name, "getWindowSize") == 0)
+    else if (name == "getWindowSize")
     {
         FlValue* const args{fl_method_call_get_args(method_call)};
         if (fl_value_get_type(args) != FL_VALUE_TYPE_LIST || fl_value_get_length(args) != 1 ||
@@ -411,7 +436,7 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
             return;
         }
 
-        auto const window_id{arg_from_to<FL_VALUE_TYPE_INT, int>(args, 0)};
+        auto const window_id{arg<FL_VALUE_TYPE_INT, int>(args, 0)};
         if (!self->windows.contains(window_id))
         {
             fl_method_call_respond_error(method_call, "Bad Arguments", "", nullptr, nullptr);
@@ -420,9 +445,16 @@ static void mir_window_method_cb(FlMethodChannel* /*channel*/, FlMethodCall* met
 
         MirWindow* const mir_window{self->windows[window_id]};
 
+        auto const width{std::holds_alternative<std::unique_ptr<mfa::XdgToplevelWindow>>(mir_window->window) ?
+            std::get<std::unique_ptr<mfa::XdgToplevelWindow>>(mir_window->window)->width() :
+            std::get<std::unique_ptr<mfa::XdgPopupWindow>>(mir_window->window)->width()};
+        auto const height{std::holds_alternative<std::unique_ptr<mfa::XdgToplevelWindow>>(mir_window->window) ?
+            std::get<std::unique_ptr<mfa::XdgToplevelWindow>>(mir_window->window)->height() :
+            std::get<std::unique_ptr<mfa::XdgPopupWindow>>(mir_window->window)->height()};
+
         g_autoptr(FlValue) result{fl_value_new_map()};
-        fl_value_set(result, fl_value_new_string("width"), fl_value_new_float(mir_window->size.width));
-        fl_value_set(result, fl_value_new_string("height"), fl_value_new_float(mir_window->size.height));
+        fl_value_set(result, fl_value_new_string("width"), fl_value_new_float(width));
+        fl_value_set(result, fl_value_new_string("height"), fl_value_new_float(height));
         fl_method_call_respond_success(method_call, result, nullptr);
     }
     else
@@ -442,6 +474,22 @@ static void my_application_activate(GApplication* application)
 
     gtk_window_set_default_size(self->main_window, MAIN_WINDOW_WIDTH, MAIN_WINDOW_HEIGHT);
     gtk_widget_show(GTK_WIDGET(self->main_window));
+
+    GdkWindow* const gdk_window{gtk_widget_get_window(GTK_WIDGET(self->main_window))};
+    GdkDisplay* const gdk_display{gdk_window_get_display(gdk_window)};
+    if (!GDK_IS_WAYLAND_DISPLAY(gdk_display))
+    {
+        std::cerr << "This application requires a Wayland display.\n";
+        std::abort();
+    }
+    wl_display* const display{gdk_wayland_display_get_wl_display(gdk_display)};
+    if (!display)
+    {
+        std::cerr << "Failed to bind to wl_display.\n";
+        std::abort();
+    }
+
+    mfa::Globals::instance().bind_interfaces(display);
 
     g_autoptr(FlDartProject) project{fl_dart_project_new()};
     fl_dart_project_set_dart_entrypoint_arguments(project, self->dart_entrypoint_arguments);

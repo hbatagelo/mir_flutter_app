@@ -23,25 +23,28 @@ public:
 
     explicit operator wl_surface*() const { return surface; }
 
+    auto width() const -> int32_t { return width_; }
+    auto height() const -> int32_t { return height_; }
+
     virtual void handle_mouse_button(
         wl_pointer* pointer,
         uint32_t serial,
         uint32_t time,
         uint32_t button,
-        uint32_t state){};
+        uint32_t state) {};
     virtual void handle_keyboard_key(
         wl_keyboard* keyboard,
         uint32_t serial,
         uint32_t time,
         uint32_t key,
-        uint32_t state){};
+        uint32_t state) {};
     virtual void handle_keyboard_modifiers(
         wl_keyboard* keyboard,
         uint32_t serial,
         uint32_t mods_depressed,
         uint32_t mods_latched,
         uint32_t mods_locked,
-        uint32_t group){};
+        uint32_t group) {};
 
 protected:
     static int const pixel_size{4};
@@ -59,14 +62,17 @@ protected:
     };
 
     void redraw();
-    void resize(int32_t width_, int32_t height_);
+    void resize(int32_t width, int32_t height);
+
+    Window(Window&&) = default;
+    Window& operator=(Window&&) = default;
 
 private:
     static int const num_buffers{2};
 
-    wl_surface* const surface;
-    int width;
-    int height;
+    wl_surface* surface;
+    int width_;
+    int height_;
 
     std::array<Buffer, Window::num_buffers> buffers{};
     bool need_to_draw{true};
@@ -80,9 +86,7 @@ private:
     virtual void draw_new_content(Buffer* buffer) = 0;
 
     Window(Window const&) = delete;
-    Window(Window&&) = delete;
     Window& operator=(Window const&) = delete;
-    Window& operator=(Window&&) = delete;
 };
 }
 

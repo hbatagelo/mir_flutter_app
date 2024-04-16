@@ -1,14 +1,15 @@
-#include "toplevel_window.h"
+#include "xdg_toplevel_window.h"
 #include "globals.h"
+#include "mir_window.h"
 #include "xdg-shell.h"
-
-#include <gdk/gdkwayland.h>
 
 #include <linux/input-event-codes.h>
 
+#include <iostream>
+
 namespace mfa = mir_flutter_app;
 
-mfa::ToplevelWindow::ToplevelWindow(wl_surface* surface, int32_t width, int32_t height) :
+mfa::XdgToplevelWindow::XdgToplevelWindow(wl_surface* surface, int32_t width, int32_t height) :
     Window{surface, width, height},
     xdgsurface{xdg_wm_base_get_xdg_surface(Globals::instance().wm_base(), static_cast<wl_surface*>(*this))},
     xdgtoplevel{xdg_surface_get_toplevel(xdgsurface)}
@@ -16,26 +17,26 @@ mfa::ToplevelWindow::ToplevelWindow(wl_surface* surface, int32_t width, int32_t 
     static xdg_toplevel_listener const shell_toplevel_listener{
         .configure = [](void* ctx, auto... args)
             {
-                static_cast<ToplevelWindow*>(ctx)->handle_xdg_toplevel_configure(args...);
+                static_cast<XdgToplevelWindow*>(ctx)->handle_xdg_toplevel_configure(args...);
             },
         .close = [](auto...) {},
         .configure_bounds = [](auto...) {},
         .wm_capabilities = [](auto...) {}};
     static xdg_surface_listener const shell_surface_listener{.configure = [](void* ctx, auto... args) {
-        static_cast<ToplevelWindow*>(ctx)->handle_xdg_surface_configure(args...);
+        static_cast<XdgToplevelWindow*>(ctx)->handle_xdg_surface_configure(args...);
     }};
 
     xdg_toplevel_add_listener(xdgtoplevel, &shell_toplevel_listener, this);
     xdg_surface_add_listener(xdgsurface, &shell_surface_listener, this);
 }
 
-mfa::ToplevelWindow::~ToplevelWindow()
+mfa::XdgToplevelWindow::~XdgToplevelWindow()
 {
     xdg_toplevel_destroy(xdgtoplevel);
     xdg_surface_destroy(xdgsurface);
 }
 
-void mfa::ToplevelWindow::handle_mouse_button(
+void mfa::XdgToplevelWindow::handle_mouse_button(
     wl_pointer* pointer,
     uint32_t serial,
     uint32_t time,
@@ -55,9 +56,14 @@ void mfa::ToplevelWindow::handle_mouse_button(
     }
 }
 
-void mfa::ToplevelWindow::handle_xdg_surface_configure(xdg_surface* surface, uint32_t serial)
+void mfa::XdgToplevelWindow::handle_xdg_surface_configure(xdg_surface* surface, uint32_t serial)
 {
-    g_print("Received xdg_surface_configure: %d\n", serial);
+    auto* window{Globals::instance().window_for(static_cast<wl_surface*>(*this))};
+    std::cout << "Window " << window->id << " - ";
+
+    std::cout << "Received xdg_surface_configure\n";
+
+    resize(pending_width, pending_height);
 
     if (is_activated)
     {
@@ -68,22 +74,23 @@ void mfa::ToplevelWindow::handle_xdg_surface_configure(xdg_surface* surface, uin
         show_unactivated();
     }
 
-    resize(pending_width, pending_height);
-
     xdg_surface_ack_configure(surface, serial);
 }
 
-void mfa::ToplevelWindow::handle_xdg_toplevel_configure(
+void mfa::XdgToplevelWindow::handle_xdg_toplevel_configure(
     xdg_toplevel* /*toplevel*/,
-    int32_t width_,
-    int32_t height_,
+    int32_t width,
+    int32_t height,
     wl_array* states)
 {
-    g_print("Received xdg_toplevel_configure: width %d, height %d\n", width_, height_);
+    auto* window{Globals::instance().window_for(static_cast<wl_surface*>(*this))};
+    std::cout << "Window " << window->id << " - ";
+
+    std::cout << "Received xdg_toplevel_configure: width: " << width << ", height: " << height << '\n';
 
     is_activated = false;
-    pending_width = width_;
-    pending_height = height_;
+    pending_width = width;
+    pending_height = height;
 
     for (auto* state{static_cast<xdg_toplevel_state*>((states)->data)};
          (char const*)state < ((char const*)(states)->data + (states)->size);
