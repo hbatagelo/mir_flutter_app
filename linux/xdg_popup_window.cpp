@@ -53,7 +53,7 @@ void mfa::XdgPopupWindow::handle_xdg_surface_configure(xdg_surface* surface, uin
     auto* window{Globals::instance().window_for(static_cast<wl_surface*>(*this))};
     std::cout << "Window " << window->id << " - ";
 
-    std::cout << "Received xdg_surface_configure\n";
+    std::cout << "Received xdg_surface_configure" << std::endl;
 
     resize(pending_width, pending_height);
 
@@ -73,7 +73,7 @@ void mfa::XdgPopupWindow::handle_xdg_popup_configure(
     std::cout << "Window " << window->id << " - ";
 
     std::cout << "Received xdg_popup_configure: x: "
-        << x << ", y: " << y << ", width " << width << ", height " << height << '\n';
+        << x << ", y: " << y << ", width " << width << ", height " << height << std::endl;
 
     pending_width = width;
     pending_height = height;

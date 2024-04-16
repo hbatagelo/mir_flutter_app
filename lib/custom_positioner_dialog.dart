@@ -52,182 +52,174 @@ Future<Map<String, dynamic>?> customPositionerDialog(
               child: Text('Custom Positioner'),
             ),
             children: [
-              Expanded(
-                child: ListTile(
-                  title: const Text('Parent Anchor'),
-                  subtitle: DropdownButton(
-                    items: anchor.map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    value: parentAnchor,
-                    isExpanded: true,
-                    focusColor: Colors.transparent,
-                    onChanged: (String? value) {
-                      setState(() {
-                        parentAnchor = value!;
-                      });
-                    },
-                  ),
+              ListTile(
+                title: const Text('Parent Anchor'),
+                subtitle: DropdownButton(
+                  items: anchor.map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  value: parentAnchor,
+                  isExpanded: true,
+                  focusColor: Colors.transparent,
+                  onChanged: (String? value) {
+                    setState(() {
+                      parentAnchor = value!;
+                    });
+                  },
                 ),
               ),
-              Expanded(
-                child: ListTile(
-                  title: const Text('Child Anchor'),
-                  subtitle: DropdownButton(
-                    items: anchor.map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    value: childAnchor,
-                    isExpanded: true,
-                    focusColor: Colors.transparent,
-                    onChanged: (String? value) {
-                      setState(() {
-                        childAnchor = value!;
-                      });
-                    },
-                  ),
+              ListTile(
+                title: const Text('Child Anchor'),
+                subtitle: DropdownButton(
+                  items: anchor.map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  value: childAnchor,
+                  isExpanded: true,
+                  focusColor: Colors.transparent,
+                  onChanged: (String? value) {
+                    setState(() {
+                      childAnchor = value!;
+                    });
+                  },
                 ),
               ),
-              Expanded(
-                child: ListTile(
-                  title: const Text('Offset'),
-                  subtitle: Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          initialValue: offset.dx.toString(),
-                          decoration: const InputDecoration(
-                            // icon: Icon(null),
-                            labelText: 'X',
-                          ),
-                          onChanged: (String value) => setState(
-                            () => offset =
-                                Offset(double.tryParse(value) ?? 0, offset.dy),
-                          ),
+              ListTile(
+                title: const Text('Offset'),
+                subtitle: Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        initialValue: offset.dx.toString(),
+                        decoration: const InputDecoration(
+                          // icon: Icon(null),
+                          labelText: 'X',
+                        ),
+                        onChanged: (String value) => setState(
+                          () => offset =
+                              Offset(double.tryParse(value) ?? 0, offset.dy),
                         ),
                       ),
-                      const SizedBox(
-                        width: 20,
-                      ),
-                      Expanded(
-                        child: TextFormField(
-                          initialValue: offset.dy.toString(),
-                          decoration: const InputDecoration(
-                            // icon: Icon(null),
-                            labelText: 'Y',
-                          ),
-                          onChanged: (String value) => setState(
-                            () => offset =
-                                Offset(offset.dx, double.tryParse(value) ?? 0),
-                          ),
+                    ),
+                    const SizedBox(
+                      width: 20,
+                    ),
+                    Expanded(
+                      child: TextFormField(
+                        initialValue: offset.dy.toString(),
+                        decoration: const InputDecoration(
+                          // icon: Icon(null),
+                          labelText: 'Y',
+                        ),
+                        onChanged: (String value) => setState(
+                          () => offset =
+                              Offset(offset.dx, double.tryParse(value) ?? 0),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(
                 height: 8,
               ),
-              Expanded(
-                child: ListTile(
-                  title: const Text('Constraint Adjustments'),
-                  subtitle: Column(
-                    children: [
-                      const SizedBox(
-                        height: 16,
-                      ),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Table(
-                                defaultVerticalAlignment:
-                                    TableCellVerticalAlignment.middle,
-                                children: [
-                                  const TableRow(children: [
-                                    TableCell(
-                                      child: Text(''),
+              ListTile(
+                title: const Text('Constraint Adjustments'),
+                subtitle: Column(
+                  children: [
+                    const SizedBox(
+                      height: 16,
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Table(
+                              defaultVerticalAlignment:
+                                  TableCellVerticalAlignment.middle,
+                              children: [
+                                const TableRow(children: [
+                                  TableCell(
+                                    child: Text(''),
+                                  ),
+                                  TableCell(
+                                    child: Center(
+                                      child: Text('X'),
                                     ),
-                                    TableCell(
-                                      child: Center(
-                                        child: Text('X'),
-                                      ),
+                                  ),
+                                  TableCell(
+                                    child: Center(
+                                      child: Text('Y'),
                                     ),
-                                    TableCell(
-                                      child: Center(
-                                        child: Text('Y'),
-                                      ),
-                                    ),
-                                  ]),
-                                  TableRow(children: [
-                                    const TableCell(
-                                      child: Text('Slide'),
-                                    ),
-                                    TableCell(
-                                      child: Checkbox(
-                                        value: slideX,
-                                        onChanged: (bool? value) =>
-                                            setState(() => slideX = value!),
-                                      ),
-                                    ),
-                                    TableCell(
-                                      child: Checkbox(
-                                        value: slideY,
-                                        onChanged: (bool? value) =>
-                                            setState(() => slideY = value!),
-                                      ),
-                                    ),
-                                  ]),
-                                  TableRow(children: [
-                                    const TableCell(
-                                      child: Text('Flip'),
-                                    ),
-                                    TableCell(
-                                      child: Checkbox(
-                                        value: flipX,
-                                        onChanged: (bool? value) =>
-                                            setState(() => flipX = value!),
-                                      ),
-                                    ),
-                                    TableCell(
-                                      child: Checkbox(
-                                        value: flipY,
-                                        onChanged: (bool? value) =>
-                                            setState(() => flipY = value!),
-                                      ),
-                                    ),
-                                  ]),
-                                  TableRow(children: [
-                                    const TableCell(
-                                      child: Text('Resize'),
-                                    ),
-                                    TableCell(
-                                      child: Checkbox(
-                                        value: resizeX,
-                                        onChanged: (bool? value) =>
-                                            setState(() => resizeX = value!),
-                                      ),
-                                    ),
-                                    TableCell(
-                                      child: Checkbox(
-                                        value: resizeY,
-                                        onChanged: (bool? value) =>
-                                            setState(() => resizeY = value!),
-                                      ),
-                                    ),
-                                  ]),
+                                  ),
                                 ]),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                                TableRow(children: [
+                                  const TableCell(
+                                    child: Text('Slide'),
+                                  ),
+                                  TableCell(
+                                    child: Checkbox(
+                                      value: slideX,
+                                      onChanged: (bool? value) =>
+                                          setState(() => slideX = value!),
+                                    ),
+                                  ),
+                                  TableCell(
+                                    child: Checkbox(
+                                      value: slideY,
+                                      onChanged: (bool? value) =>
+                                          setState(() => slideY = value!),
+                                    ),
+                                  ),
+                                ]),
+                                TableRow(children: [
+                                  const TableCell(
+                                    child: Text('Flip'),
+                                  ),
+                                  TableCell(
+                                    child: Checkbox(
+                                      value: flipX,
+                                      onChanged: (bool? value) =>
+                                          setState(() => flipX = value!),
+                                    ),
+                                  ),
+                                  TableCell(
+                                    child: Checkbox(
+                                      value: flipY,
+                                      onChanged: (bool? value) =>
+                                          setState(() => flipY = value!),
+                                    ),
+                                  ),
+                                ]),
+                                TableRow(children: [
+                                  const TableCell(
+                                    child: Text('Resize'),
+                                  ),
+                                  TableCell(
+                                    child: Checkbox(
+                                      value: resizeX,
+                                      onChanged: (bool? value) =>
+                                          setState(() => resizeX = value!),
+                                    ),
+                                  ),
+                                  TableCell(
+                                    child: Checkbox(
+                                      value: resizeY,
+                                      onChanged: (bool? value) =>
+                                          setState(() => resizeY = value!),
+                                    ),
+                                  ),
+                                ]),
+                              ]),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(

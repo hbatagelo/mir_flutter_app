@@ -61,7 +61,7 @@ void mfa::XdgToplevelWindow::handle_xdg_surface_configure(xdg_surface* surface, 
     auto* window{Globals::instance().window_for(static_cast<wl_surface*>(*this))};
     std::cout << "Window " << window->id << " - ";
 
-    std::cout << "Received xdg_surface_configure\n";
+    std::cout << "Received xdg_surface_configure" << std::endl;
 
     resize(pending_width, pending_height);
 
@@ -86,7 +86,7 @@ void mfa::XdgToplevelWindow::handle_xdg_toplevel_configure(
     auto* window{Globals::instance().window_for(static_cast<wl_surface*>(*this))};
     std::cout << "Window " << window->id << " - ";
 
-    std::cout << "Received xdg_toplevel_configure: width: " << width << ", height: " << height << '\n';
+    std::cout << "Received xdg_toplevel_configure: width: " << width << ", height: " << height << std::endl;
 
     is_activated = false;
     pending_width = width;

@@ -311,7 +311,7 @@ void mfa::Globals::handle_wl_registry_global(
 
     if (!interface_name.empty())
     {
-        std::cout << "Bound to " << interface_name << " (v" << version_ << ")\n";
+        std::cout << "Bound to " << interface_name << " (v" << version_ << ")" << std::endl;
     }
 }
 
@@ -335,7 +335,7 @@ void mfa::Globals::handle_mouse_enter(
     // std::cout << " - ";
 
     // std::cout << "mouse_enter: (" << std::fixed << std::setprecision(2)
-    //     << wl_fixed_to_double(surface_x) << ", " << wl_fixed_to_double(surface_y) << ")\n";
+    //     << wl_fixed_to_double(surface_x) << ", " << wl_fixed_to_double(surface_y) << ")" << std::endl;
 }
 
 void mfa::Globals::handle_mouse_leave(wl_pointer* /*pointer*/, uint32_t /*serial*/, wl_surface* surface)
@@ -350,7 +350,7 @@ void mfa::Globals::handle_mouse_leave(wl_pointer* /*pointer*/, uint32_t /*serial
     // }
     // std::cout << " - ";
 
-    // std::cout << "mouse_leave\n";
+    // std::cout << "mouse_leave" << std::endl;
 
     if (mouse_focus == window_for(surface))
     {
@@ -376,7 +376,7 @@ void mfa::Globals::handle_mouse_motion(
 
     // std::cout << "mouse_motion: (" << std::fixed << std::setprecision(2)
     //     << wl_fixed_to_double(surface_x) << ", " << wl_fixed_to_double(surface_y)
-    //     << ") @ " << time << "\n";
+    //     << ") @ " << time << std::endl;
 
     pointer_position_ = {wl_fixed_to_double(surface_x), wl_fixed_to_double(surface_y)};
 }
@@ -399,7 +399,7 @@ void mfa::Globals::handle_mouse_button(
     // std::cout << " - ";
 
     // std::cout << "mouse_button: button " << button << ", state " << state
-    //     << " @ " << time << "\n";
+    //     << " @ " << time << std::endl;
 
     if (is_registered(mouse_focus))
     {
@@ -430,7 +430,7 @@ void mfa::Globals::handle_keyboard_enter(wl_keyboard* /*keyboard*/, uint32_t, wl
     // }
     // std::cout << " - ";
 
-    // std::cout << "keyboard_enter\n";
+    // std::cout << "keyboard_enter" << std::endl;
 }
 
 void mfa::Globals::handle_keyboard_leave(wl_keyboard* /*keyboard*/, uint32_t, wl_surface* surface)
@@ -445,7 +445,7 @@ void mfa::Globals::handle_keyboard_leave(wl_keyboard* /*keyboard*/, uint32_t, wl
     // }
     // std::cout << " - ";
 
-    // std::cout << "keyboard_leave\n";
+    // std::cout << "keyboard_leave" << std::endl;
 
     if (keyboard_focus == window_for(surface))
     {
@@ -470,7 +470,7 @@ void mfa::Globals::handle_keyboard_key(
     // }
     // std::cout << " - ";
 
-    // std::cout << "keyboard_key: key " << key << ", state " << state << '\n';
+    // std::cout << "keyboard_key: key " << key << ", state " << state << std::endl;
 
     if (is_registered(keyboard_focus))
     {
@@ -509,7 +509,7 @@ void mfa::Globals::handle_keyboard_modifiers(
     //     << ", latched " << mods_latched
     //     << ", locked " << mods_locked
     //     << ", group " << group
-    //     << "\n";
+    //     << std::endl;
 
     if (is_registered(keyboard_focus))
     {

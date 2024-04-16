@@ -70,5 +70,5 @@ void mfa::SatelliteWindow::handle_repositioned(
     mir_satellite_surface_v1* /*mir_satellite_surface_v1*/,
     uint32_t /*token*/)
 {
-    std::cout << "Received repositioned event\n";
+    std::cout << "Received repositioned event" << std::endl;
 }
