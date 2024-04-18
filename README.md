@@ -1,12 +1,12 @@
 # mir_flutter_app
 
-A reference application demonstrating multi-window support for Flutter on Linux using the Mir windowing language.
+Reference application demonstrating multi-window support for Flutter on Linux using the Mir windowing language.
 
 ![teaser](screenshot.png)
 
 Supported window types:
 
-* **Regular**: Regular top-level window.
+* **Regular**: Regular "top level" window.
 * **Floating regular**: Always-on-top regular window.
 * **Dialog**: Temporary window that prompts the user for a response. If a dialog has a parent, it is modal to the parent and any satellites the parent has.
 * **Satellite**: Accessory window to a regular, floating regular, or dialog window.
@@ -56,7 +56,7 @@ flutter run
 
 You'll see the main "mir_flutter_app" window as shown in the screenshot above.
 
-Use the buttons in the "New Window" panel to create desktop windows of different types.
+Use the buttons in the "New Window" group to create desktop windows of different types.
 
 Select a window list entry to designate the parent window for the next **dialog**, **satellite**, **popup**, or **tip** window. If no entry is selected, dialogs will be created without a parent, and the creation of **satellite**, **popup**, and **tip** windows will be disabled. When a new **regular** or **floating regular** window is created, its entry in the window list is automatically selected.
 

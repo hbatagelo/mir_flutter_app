@@ -1,0 +1,29 @@
+name: mir-flutter-app
+base: core22
+version: 0.1.0
+summary: Reference application demonstrating multi-window support for Flutter with Mir.
+description: |
+  Reference application demonstrating multi-window support for Flutter with Mir.
+
+confinement: strict
+grade: devel
+
+architectures:
+- build-on: amd64
+- build-on: arm64
+- build-on: armhf
+
+apps:
+  mir-flutter-app:
+    command: mir_flutter_app
+    extensions: [gnome]
+    plugs:
+      - home
+      - wayland
+      - opengl
+
+parts:
+  mir-flutter-app:
+    plugin: flutter
+    flutter-target: lib/main.dart
+    source: .
