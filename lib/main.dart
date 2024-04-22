@@ -33,7 +33,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final windowChannel = const MethodChannel('io.mir-server/window');
 
   Map<String, dynamic> windowSettings = {
-    'regularSize': const Size(400, 400),
+    'regularSize': const Size(300, 300),
     'floatingRegularSize': const Size(300, 300),
     'dialogSize': const Size(200, 200),
     'satelliteSize': const Size(150, 300),
@@ -141,29 +141,20 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Column(
         children: [
           Expanded(
-            flex: 4,
-            child: Container(),
-          ),
-          Expanded(
-            flex: 92,
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 50.0),
+              padding: const EdgeInsets.symmetric(horizontal: 10.0),
               children: [
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      flex: 5,
-                      child: Container(),
-                    ),
-                    Expanded(
-                      flex: 30,
+                      flex: 60,
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           SizedBox(
-                            width: 500,
-                            height: 500,
+                            width: 400,
+                            height: 400,
                             child: SingleChildScrollView(
                               scrollDirection: Axis.vertical,
                               child: DataTable(
@@ -263,24 +254,20 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     ),
                     Expanded(
-                      flex: 1,
-                      child: Container(),
-                    ),
-                    Expanded(
-                      flex: 30,
+                      flex: 40,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Card.outlined(
-                            margin: const EdgeInsets.symmetric(horizontal: 100),
+                            margin: const EdgeInsets.symmetric(horizontal: 25),
                             child: Padding(
-                              padding: const EdgeInsets.fromLTRB(26, 0, 26, 12),
+                              padding: const EdgeInsets.fromLTRB(25, 0, 25, 5),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   const Padding(
                                     padding:
-                                        EdgeInsets.only(top: 16, bottom: 16),
+                                        EdgeInsets.only(top: 10, bottom: 10),
                                     child: Text(
                                       'New Window',
                                       style: TextStyle(
@@ -504,7 +491,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                             ? 'Tip of ID ${windows[selectedRowIndex]['id']}'
                                             : 'Tip'),
                                       ),
-                                      const SizedBox(height: 14),
+                                      const SizedBox(height: 8),
                                       Container(
                                         alignment: Alignment.bottomRight,
                                         child: TextButton(
@@ -531,17 +518,16 @@ class _MyHomePageState extends State<MyHomePage> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 12),
                           Card.outlined(
-                            margin: const EdgeInsets.symmetric(horizontal: 100),
+                            margin: const EdgeInsets.symmetric(horizontal: 25),
                             child: Padding(
-                              padding: const EdgeInsets.fromLTRB(20, 0, 12, 12),
+                              padding: const EdgeInsets.fromLTRB(25, 0, 15, 5),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   const Padding(
-                                    padding:
-                                        EdgeInsets.only(top: 16, bottom: 6),
+                                    padding: EdgeInsets.only(top: 10),
                                     child: Text(
                                       'Positioner',
                                       style: TextStyle(
@@ -579,11 +565,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                       },
                                     ),
                                   ),
-                                  const SizedBox(height: 6),
                                   Container(
                                     alignment: Alignment.bottomRight,
                                     child: Padding(
-                                      padding: const EdgeInsets.only(right: 8),
+                                      padding: const EdgeInsets.only(right: 10),
                                       child: TextButton(
                                         child: const Text('CUSTOM PRESET'),
                                         onPressed: () {
@@ -621,18 +606,10 @@ class _MyHomePageState extends State<MyHomePage> {
                         ],
                       ),
                     ),
-                    Expanded(
-                      flex: 2,
-                      child: Container(),
-                    ),
                   ],
                 ),
               ],
             ),
-          ),
-          Expanded(
-            flex: 4,
-            child: Container(),
           ),
         ],
       ),

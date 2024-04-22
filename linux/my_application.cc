@@ -16,8 +16,8 @@
 namespace
 {
 gchar const* const CHANNEL{"io.mir-server/window"};
-int const MAIN_WINDOW_WIDTH{1280};
-int const MAIN_WINDOW_HEIGHT{720};
+int const MAIN_WINDOW_WIDTH{760};
+int const MAIN_WINDOW_HEIGHT{580};
 }
 
 namespace mfa = mir_flutter_app;

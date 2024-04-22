@@ -19,8 +19,8 @@ Future<Map<String, dynamic>?> windowSettingsDialog(
         return StatefulBuilder(
             builder: (BuildContext ctx, StateSetter setState) {
           return SimpleDialog(
-            contentPadding: const EdgeInsets.all(8),
-            titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+            contentPadding: const EdgeInsets.all(4),
+            titlePadding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
             title: const Center(
               child: Text('Window Settings'),
             ),
@@ -116,7 +116,7 @@ Future<Map<String, dynamic>?> windowSettingsDialog(
                       ],
                     ),
                     const SizedBox(
-                      height: 8,
+                      height: 2,
                     ),
                     Row(
                       children: [
@@ -203,7 +203,7 @@ Future<Map<String, dynamic>?> windowSettingsDialog(
                       ],
                     ),
                     const SizedBox(
-                      height: 8,
+                      height: 2,
                     ),
                     Row(
                       children: [
@@ -287,7 +287,7 @@ Future<Map<String, dynamic>?> windowSettingsDialog(
                       ],
                     ),
                     const SizedBox(
-                      height: 8,
+                      height: 2,
                     ),
                     const Divider(),
                     Row(
@@ -385,7 +385,7 @@ Future<Map<String, dynamic>?> windowSettingsDialog(
                       ],
                     ),
                     const SizedBox(
-                      height: 8,
+                      height: 2,
                     ),
                   ],
                 ),
@@ -409,7 +409,7 @@ Future<Map<String, dynamic>?> windowSettingsDialog(
                 ),
               ),
               const SizedBox(
-                height: 8,
+                height: 2,
               ),
             ],
           );

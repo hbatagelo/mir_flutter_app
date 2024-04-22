@@ -47,7 +47,7 @@ Future<Map<String, dynamic>?> customPositionerDialog(
             builder: (BuildContext ctx, StateSetter setState) {
           return SimpleDialog(
             contentPadding: const EdgeInsets.all(8),
-            titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+            titlePadding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
             title: const Center(
               child: Text('Custom Positioner'),
             ),
@@ -127,14 +127,14 @@ Future<Map<String, dynamic>?> customPositionerDialog(
                 ),
               ),
               const SizedBox(
-                height: 8,
+                height: 4,
               ),
               ListTile(
                 title: const Text('Constraint Adjustments'),
                 subtitle: Column(
                   children: [
                     const SizedBox(
-                      height: 16,
+                      height: 8,
                     ),
                     Row(
                       children: [
@@ -222,9 +222,6 @@ Future<Map<String, dynamic>?> customPositionerDialog(
                   ],
                 ),
               ),
-              const SizedBox(
-                height: 4,
-              ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: TextButton(
@@ -278,9 +275,6 @@ Future<Map<String, dynamic>?> customPositionerDialog(
                   },
                   child: const Text('Apply'),
                 ),
-              ),
-              const SizedBox(
-                height: 8,
               ),
             ],
           );
