@@ -11,6 +11,8 @@ Future<Map<String, dynamic>?> customPositionerDialog(
       builder: (BuildContext ctx) {
         String name = settings['name'].toString();
         Offset offset = settings['offset'] as Offset;
+        final TextEditingController controllerX = TextEditingController();
+        final TextEditingController controllerY = TextEditingController();
         final List<String> anchor = FlutterViewPositionerAnchor.values
             .map((e) => e.toString().split('.').last)
             .toList();
@@ -42,6 +44,8 @@ Future<Map<String, dynamic>?> customPositionerDialog(
                 .toString()
                 .split('.')
                 .last;
+        controllerX.text = offset.dx.toString();
+        controllerY.text = offset.dy.toString();
 
         return StatefulBuilder(
             builder: (BuildContext ctx, StateSetter setState) {
@@ -96,9 +100,8 @@ Future<Map<String, dynamic>?> customPositionerDialog(
                   children: [
                     Expanded(
                       child: TextFormField(
-                        initialValue: offset.dx.toString(),
+                        controller: controllerX,
                         decoration: const InputDecoration(
-                          // icon: Icon(null),
                           labelText: 'X',
                         ),
                         onChanged: (String value) => setState(
@@ -112,9 +115,8 @@ Future<Map<String, dynamic>?> customPositionerDialog(
                     ),
                     Expanded(
                       child: TextFormField(
-                        initialValue: offset.dy.toString(),
+                        controller: controllerY,
                         decoration: const InputDecoration(
-                          // icon: Icon(null),
                           labelText: 'Y',
                         ),
                         onChanged: (String value) => setState(
@@ -224,56 +226,88 @@ Future<Map<String, dynamic>?> customPositionerDialog(
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: TextButton(
-                  onPressed: () {
-                    Set<FlutterViewPositionerConstraintAdjustment>
-                        constraintAdjustments = {};
-                    if (slideX) {
-                      constraintAdjustments.add(
-                          FlutterViewPositionerConstraintAdjustment.slideX);
-                    }
-                    if (slideY) {
-                      constraintAdjustments.add(
-                          FlutterViewPositionerConstraintAdjustment.slideY);
-                    }
-                    if (flipX) {
-                      constraintAdjustments
-                          .add(FlutterViewPositionerConstraintAdjustment.flipX);
-                    }
-                    if (flipY) {
-                      constraintAdjustments
-                          .add(FlutterViewPositionerConstraintAdjustment.flipY);
-                    }
-                    if (resizeX) {
-                      constraintAdjustments.add(
-                          FlutterViewPositionerConstraintAdjustment.resizeX);
-                    }
-                    if (resizeY) {
-                      constraintAdjustments.add(
-                          FlutterViewPositionerConstraintAdjustment.resizeY);
-                    }
-                    Navigator.of(context, rootNavigator: true)
-                        .pop(<String, dynamic>{
-                      'name': name,
-                      'parentAnchor':
-                          FlutterViewPositionerAnchor.values.firstWhere(
-                        (e) =>
-                            e.toString() ==
-                            'FlutterViewPositionerAnchor.$parentAnchor',
-                        orElse: () => FlutterViewPositionerAnchor.left,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () {
+                          setState(() {
+                            parentAnchor = 'left';
+                            childAnchor = 'right';
+                            offset = const Offset(0, 50);
+                            controllerX.text = offset.dx.toString();
+                            controllerY.text = offset.dy.toString();
+                            slideX = true;
+                            slideY = true;
+                            flipX = false;
+                            flipY = false;
+                            resizeX = false;
+                            resizeY = false;
+                          });
+                        },
+                        child: const Text('Set Defaults'),
                       ),
-                      'childAnchor':
-                          FlutterViewPositionerAnchor.values.firstWhere(
-                        (e) =>
-                            e.toString() ==
-                            'FlutterViewPositionerAnchor.$childAnchor',
-                        orElse: () => FlutterViewPositionerAnchor.left,
+                    ),
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () {
+                          Set<FlutterViewPositionerConstraintAdjustment>
+                              constraintAdjustments = {};
+                          if (slideX) {
+                            constraintAdjustments.add(
+                                FlutterViewPositionerConstraintAdjustment
+                                    .slideX);
+                          }
+                          if (slideY) {
+                            constraintAdjustments.add(
+                                FlutterViewPositionerConstraintAdjustment
+                                    .slideY);
+                          }
+                          if (flipX) {
+                            constraintAdjustments.add(
+                                FlutterViewPositionerConstraintAdjustment
+                                    .flipX);
+                          }
+                          if (flipY) {
+                            constraintAdjustments.add(
+                                FlutterViewPositionerConstraintAdjustment
+                                    .flipY);
+                          }
+                          if (resizeX) {
+                            constraintAdjustments.add(
+                                FlutterViewPositionerConstraintAdjustment
+                                    .resizeX);
+                          }
+                          if (resizeY) {
+                            constraintAdjustments.add(
+                                FlutterViewPositionerConstraintAdjustment
+                                    .resizeY);
+                          }
+                          Navigator.of(context, rootNavigator: true)
+                              .pop(<String, dynamic>{
+                            'name': name,
+                            'parentAnchor':
+                                FlutterViewPositionerAnchor.values.firstWhere(
+                              (e) =>
+                                  e.toString() ==
+                                  'FlutterViewPositionerAnchor.$parentAnchor',
+                              orElse: () => FlutterViewPositionerAnchor.left,
+                            ),
+                            'childAnchor':
+                                FlutterViewPositionerAnchor.values.firstWhere(
+                              (e) =>
+                                  e.toString() ==
+                                  'FlutterViewPositionerAnchor.$childAnchor',
+                              orElse: () => FlutterViewPositionerAnchor.left,
+                            ),
+                            'offset': offset,
+                            'constraintAdjustments': constraintAdjustments,
+                          });
+                        },
+                        child: const Text('Apply'),
                       ),
-                      'offset': offset,
-                      'constraintAdjustments': constraintAdjustments,
-                    });
-                  },
-                  child: const Text('Apply'),
+                    ),
+                  ],
                 ),
               ),
             ],
